@@ -1,68 +1,68 @@
-# Aşama 03: Frontend Hazırlığı (Frontend Readiness)
+# Stage 03: Frontend Readiness
 
-> **Amaç**: İstemci tarafı uygulamasının (SPA, SSR, Mobile Web) prodüksiyon ortamında yüksek performanslı, dayanıklı, erişilebilir ve kurumsal standartlara uygun (Anti-AI-Slop ilkelerine sadık) bir kullanıcı deneyimi sunmasını sağlamak.
+> **Objective**: Ensure client applications (SPA, SSR, mobile web) achieve high performance, reliability, accessibility, and strict adherence to enterprise design standards (Anti-AI-Slop principles) prior to deployment.
 
 ---
 
-## 1. Yapılacak Maddeler (Action Items)
+## 1. Action Items
 
-### A. Derleme ve Paket Optimizasyonu (Build & Bundle Optimization)
-- [ ] **Sıfır Hata / Uyarı ile Build**: `npm run build` (veya `vite build` / `next build`) komutu sıfır TypeScript tipi hatası ve sıfır linter hatası ile tamamlanmalı.
-- [ ] **Paket Boyutu ve Code-Splitting**: 
-  - İlk yüklenen JavaScript demeti (Initial JS bundle) gzipped < 200 KB olmalıdır.
-  - Rota bazlı dinamik yükleme (`React.lazy`, dynamic `import()`) uygulanmalıdır.
-  - Ağır kütüphaneler (Moment.js yerine Day.js, Lodash yerine native ES6) elenmelidir.
-- [ ] **Statik Varlık Yönetimi ve Önbellekleme (Asset Caching)**:
-  - JS/CSS dosyaları içerik hash'i (content hash: örn. `main.a8f29c.js`) ile üretilmelidir.
-  - Statik varlıklar için `Cache-Control: public, max-age=31536000, immutable`, `index.html` için `Cache-Control: no-cache` tanımlanmalıdır.
+### A. Production Build & Bundle Optimization
+- [ ] **Clean Build**: Production compilation (`npm run build`, `vite build`, or `next build`) must succeed with zero TypeScript compiler errors and zero linter warnings.
+- [ ] **Bundle Size & Code Splitting**:
+  - The initial critical JavaScript bundle must be < 200 KB gzipped.
+  - Apply route-based dynamic loading (`React.lazy`, dynamic `import()`).
+  - Eliminate bloated legacy libraries (e.g., substitute Day.js for Moment.js, native methods for Lodash).
+- [ ] **Static Asset Caching**:
+  - Assets must be compiled with content-based hashes (e.g., `main.a8f29c.js`).
+  - Set `Cache-Control: public, max-age=31536000, immutable` on hashed assets, and `Cache-Control: no-cache` on `index.html`.
 
-### B. Dayanıklılık ve Hata Sınırları (Resilience & Error Boundaries)
-- [ ] **Global ve Bölgesel Error Boundary**: Bir bileşendeki JavaScript çökmesi tüm sayfayı beyaz ekrana (blank screen) boğmamalı; çöken bileşenin yerine kullanıcı dostu hata mesajı ve "Yeniden Dene" butonu gösterilmelidir.
-- [ ] **API Kesinti ve Ağ Fallback'i**: Backend API'sine ulaşılamadığında veya 500 hatası döndüğünde uygulama sonsuz yüklenmede (infinite spinner) takılmamalı, net bir hata durumu (error state) sunmalıdır.
+### B. Resilience & Error Boundaries
+- [ ] **Global & Sectional Error Boundaries**: Prevent unhandled JavaScript runtime exceptions from crashing the entire view into a blank white screen. Provide localized error feedback with clear "Retry" actions.
+- [ ] **API Fallback & Offline States**: When upstream APIs fail or return 500 errors, the UI must avoid infinite loading spinners and present graceful, actionable error messaging.
 
-### C. Anti-AI-Slop Standartları ve UI/UX Hijyeni
-- [ ] **4-Durumlu Bileşen Mimarisi**: Veri çeken veya etkileşimli her bileşende 4 temel durum eksiksiz uygulanmalıdır:
-  1. *Loading*: İçeriğin boyutuna uygun skeleton (asla devasa zıplayan spinner değil).
-  2. *Empty*: Veri olmadığında bilgilendirici ve eyleme yönlendiren boş durum (empty state).
-  3. *Error*: Hata mesajı ve doğrudan tekrar deneme (retry) aksiyonu.
-  4. *Interactive*: Normal, hover, focus-visible ve disabled durumları.
-- [ ] **Emoji Yasağı**: Butonlarda, başlıklarda, bildirimlerde veya menü ikonlarında asla Unicode emojiler (🚀, 💡, 🔥, 🤖) kullanılmamalı; tek renkli vektör SVG ikon setleri (Lucide, Heroicons vb.) tercih edilmelidir.
-- [ ] **Görsel ve Metin Hijyeni**: Var olmayan statik dosya yolları (`/placeholder.svg`) bulunmamalı, avatar bulunmadığında baş harf (initials) gösterilmeli, gerçekçi içerikler kullanılmalıdır (asla `Lorem Ipsum` yok).
-- [ ] **Semantik HTML ve Klavye Erişilebilirliği**: `<div onClick>` kesinlikle yasaktır; yerel `<button>` ve `<a>` etiketleri kullanılmalı, klavye navigasyonunda `:focus-visible` çerçeveleri korunmalıdır.
+### C. Anti-AI-Slop Standards & UI Hygiene
+- [ ] **4-State Component Architecture**: Every interactive and data-fetching component must support four distinct states:
+  1. *Loading*: Content-sized skeleton placeholders (never jarring oversized spinners).
+  2. *Empty*: Informative, action-oriented empty states when datasets are null or empty.
+  3. *Error*: Contextual error explanations with direct retry triggers.
+  4. *Interactive*: Normal, hover, focus-visible, and disabled states.
+- [ ] **Emoji Prohibition**: Absolutely no Unicode emojis (🚀, 💡, 🔥, 🤖) in button chrome, navigation bars, badges, or headers. Use monochromatic vector SVG icon libraries (Lucide, Heroicons, etc.).
+- [ ] **Asset & Copy Hygiene**: Zero broken static paths (`/placeholder.svg`); use initials as fallbacks for missing user avatars; use realistic contextual copy instead of `Lorem Ipsum`.
+- [ ] **Semantic HTML & Keyboard Accessibility**: Avoid `<div onClick>`; use native `<button>` and `<a>` elements with preserved `:focus-visible` styling for full keyboard navigation.
 
-### D. Performans ve Web Vitals Kontrolü
-- [ ] Core Web Vitals eşikleri sağlanmalıdır:
+### D. Web Vitals
+- [ ] Satisfy Core Web Vitals targets:
   - LCP (Largest Contentful Paint) < 2.5s
   - CLS (Cumulative Layout Shift) < 0.1
   - INP (Interaction to Next Paint) < 200ms
 
 ---
 
-## 2. Çıkış Kriteri (Exit Gate)
+## 2. Exit Gate (Gate 03)
 
-Aşağıdaki koşulların **tamamı** sağlanmadan Aşama 04'e geçilemez:
-1. `GOLIVE.md` dosyasında Aşama 03 maddelerinin tamamı işaretlenmiş olmalı.
-2. Production build komutu yerel veya CI ortamında başarıyla tamamlanmalı ve artifact oluşturulmalı.
-3. Ağ bağlantısı simüle olarak kesildiğinde sayfanın beyaz ekrana düşmediği, graceful offline/error ekranı gösterdiği doğrulanmış olmalı.
-4. UI chrome ve butonlarda hiçbir Unicode emoji bulunmadığı taranmış olmalı.
+Stage 04 cannot commence until **all** of the following criteria are satisfied:
+1. All Stage 03 checklist items are completed in `GOLIVE.md`.
+2. Production build succeeds cleanly in CI/local environments and generates production artifacts.
+3. Disconnecting network connectivity produces an informative offline/error screen rather than an unhandled blank page.
+4. Static scans confirm zero Unicode emojis in button labels, badges, and headers.
 
 ---
 
-## 3. Her Maddenin Nedeni (Rationale)
+## 3. Rationale
 
-| Madde | Neden Zorunlu? |
+| Action Item | Why It Is Mandatory |
 |:---|:---|
-| Code-Splitting | 5 MB'lık tek bir devasa JS dosyasını mobil cihazlarda indirmek ve parse etmek 10+ saniye sürer ve kullanıcıların sayfayı terk etmesine yol açar. |
-| Cache-Control Ayrımı | `index.html` önbelleklenirse, yeni sürüm yayınlandığında kullanıcılar eski JS dosyalarını aramaya devam eder ve 404/MIME uyuşmazlığı hataları patlar. |
-| Error Boundary | Tek bir `undefined.map()` hatası yüzünden kullanıcının tüm ekranı kaybetmesini engeller, çöküşü bölgesel tutar. |
-| 4-Durumlu Bileşenler | Yükleme ekranı veya boş ekran tasarlanmamış bileşenler, veri geciktiğinde veya sonuç boş geldiğinde arayüzü bozar ve profesyonel olmayan bir izlenim yaratır. |
-| Semantik HTML & Focus | Engelli kullanıcıların ekran okuyucularla sistemi kullanabilmesini ve klavye kullanan profesyonel kullanıcıların sisteme erişebilmesini sağlar. |
+| Code Splitting | Unoptimized 5MB JavaScript bundles take 10+ seconds to download and parse on mobile connections, leading to severe user drop-off. |
+| Cache-Control Distinction | Caching `index.html` causes browsers to retain references to old bundles after a release, leading to 404s and broken user sessions. |
+| Error Boundaries | Isolates component-level errors (like `undefined.map()`) to specific widgets, preventing entire pages from collapsing. |
+| 4-State Components | Prevents jarring layout shifts and layout breaks when data is delayed or empty. |
+| Semantic HTML | Ensures compliance with accessibility standards (WCAG) so screen readers and keyboard users can operate the application. |
 
 ---
 
-## 4. Sık Yapılan Hatalar (Common Pitfalls)
+## 4. Common Pitfalls
 
-- ❌ **`index.html`'i Yıllarca Önbelleğe Almak**: Tarayıcının yeni sürümü algılamasını engelleyerek kullanıcıları eski kodda hapsetmek.
-- ❌ **Sonsuz Yüklenme Spinner'ı**: API çağrısı `catch` bloğunda `setIsLoading(false)` çağırmayı unutup kullanıcıyı sonsuz dönen çemberde bırakmak.
-- ❌ **Yanlış Çevre Değişkeni İfşası**: `NEXT_PUBLIC_` veya `VITE_` önekiyle istemciye gizli API anahtarlarını (private secret) derleme anında gömmek.
-- ❌ **Stil Patlaması (Layout Shift - CLS)**: Yüklenen görsellere `width` ve `height` vermeyip görsel yüklendiğinde metinlerin aşağı fırlamasına neden olmak.
+- ❌ **Aggressively Caching `index.html`**: Preventing clients from discovering updated bundles and trapping users on outdated deployments.
+- ❌ **Unterminated Loading Spinners**: Omitting `setIsLoading(false)` inside `catch` or `finally` blocks, leaving users trapped on infinite spinners upon failure.
+- ❌ **Leaking Private Secrets in Client Bundles**: Prefixing private API credentials with `VITE_` or `NEXT_PUBLIC_` and baking them into client-facing bundles.
+- ❌ **Cumulative Layout Shifts (CLS)**: Failing to set explicit `width` and `height` dimensions on images and dynamic containers, causing page contents to jump during rendering.

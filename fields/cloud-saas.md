@@ -1,57 +1,57 @@
-# Saha Eklentisi: Cloud / SaaS (Cloud & SaaS Field Branch)
+# Field Extension: Cloud & SaaS
 
-> **Amaç**: Genel veya özel bulut ortamlarında (AWS, GCP, Azure, Hetzner vb.) çalışan çok kullanıcılı (multi-tenant) veya bağımsız SaaS mimarilerinde altyapı güvenliği, esnek ölçekleme, alan adı/TLS yönetimi ve bütçe kontrolünü sağlamak.
-
----
-
-## 1. Yapılacak Maddeler (Action Items)
-
-### A. Altyapı Kod Olarak (Infrastructure as Code - IaC)
-- [ ] **Tam Deklaratif Altyapı**: Tüm bulut kaynakları (VPC, subnet, veritabanı, load balancer, S3 bucket) Terraform, OpenTofu, Pulumi veya AWS CDK ile tanımlanmış olmalıdır.
-- [ ] **Manuel Değişiklik Yasağı (No ClickOps)**: Bulut konsolundan el ile yapılan hiçbir ayar bulunmamalı; `terraform plan` çıktısında beklenmedik değişiklik (drift) olmamalıdır.
-- [ ] **Uzak Durum Kilitleme (Remote State & Lock)**: IaC state dosyaları versiyonlu ve şifreli bir depoda (örn. S3 + DynamoDB table locking) saklanmalıdır.
-
-### B. DNS, Alan Adı ve TLS Sertifika Yönetimi
-- [ ] **Otomatik TLS Yenileme**: SSL/TLS sertifikaları Let's Encrypt, AWS ACM veya Cloudflare üzerinden otomatik yenilenen mekanizmalara bağlanmalıdır.
-- [ ] **DNS TTL Ayarı**: Canlıya geçiş öncesinde ilgili DNS A/CNAME kayıtlarının TTL süresi düşük bir değere (örn. 60-300 saniye) çekilmeli; böylece olası IP/yönlendirme değişimleri anında yansımalıdır.
-
-### C. Otomatik Ölçekleme ve Kaynak Limitleri (Auto-Scaling & Limits)
-- [ ] **Yatay Pod/Sunucu Ölçekleme (HPA / Auto Scaling Groups)**: CPU > %70 veya RPS artışına göre otomatik yeni instance açma ve trafik düşünce küçülme (scale-in) kuralları tanımlanmalıdır.
-- [ ] **Kubernetes Resource Requests & Limits**: Her konteyner için minimum `requests` ve tavan `limits` (CPU ve RAM) açıkça belirtilmeli; limitsiz (unbounded) konteyner bırakılmamalıdır.
-
-### D. Bulut Bütçe Alarmları ve Maliyet Kontrolü (FinOps)
-- [ ] **Bütçe Alarmı (Budget Alerts)**: Aylık beklenen bulut harcamasının %50, %80 ve %100 eşiklerine ulaşıldığında e-posta/Slack uyarısı gönderen kurallar kurulmalıdır.
-- [ ] **Gereksiz Kaynak Temizliği**: Boşta bekleyen NAT Gateway'ler, kullanılmayan unattached EBS hacimleri veya devasa test bucket'ları temizlenmelidir.
-
-### E. Kademeli ve Ağırlıklı Yayın (Canary & Weighted Routing)
-- [ ] Ingress veya Service Mesh (Istio, AWS ALB, Cloudflare Workers) üzerinde ağırlıklı trafik bölme (örn. %95 kararlı v1, %5 canary v2) yapılandırması hazır olmalıdır.
+> **Objective**: Address the specific operational, security, financial, and architectural requirements of multi-tenant or managed single-tenant applications deployed to public or private cloud platforms (AWS, GCP, Azure, Kubernetes, serverless).
 
 ---
 
-## 2. Çıkış Kriteri (Field Gate: Cloud/SaaS)
+## 1. Action Items
 
-Aşağıdaki koşulların **tamamı** sağlanmadan Cloud sahasına çıkış yapılamaz:
-1. `GOLIVE.md` dosyasındaki Cloud/SaaS maddeleri eksiksiz işaretlenmiş olmalı.
-2. `terraform plan` komutu sıfır beklenmedik değişiklik (`No changes. Infrastructure is up-to-date.`) üretmeli.
-3. TLS sertifikasının geçerliliği ve HSTS başlığı `https://` üzerinden doğrulanmış olmalı.
-4. Bulut sağlayıcı bütçe alarmının aktif olduğu panelden doğrulanmış olmalı.
+### A. Infrastructure as Code (IaC)
+- [ ] **Fully Declarative Resources**: All cloud infrastructure (VPCs, subnets, managed databases, load balancers, object storage) must be declared using Terraform, OpenTofu, Pulumi, or AWS CDK.
+- [ ] **No ClickOps**: Manual changes in cloud provider web consoles are strictly forbidden. Running `terraform plan` must yield zero configuration drift.
+- [ ] **Encrypted Remote State & Locking**: Persist IaC state files in versioned, encrypted remote stores (e.g., S3 with DynamoDB state locking).
+
+### B. DNS, Domains & Automated TLS
+- [ ] **Automated TLS Lifecycle**: SSL/TLS certificates must be managed via automated renewal mechanisms (AWS ACM, Let's Encrypt, Cloudflare) with enforced HSTS.
+- [ ] **Reduced DNS TTL**: Prior to go-live, reduce DNS record TTLs to 60-300 seconds to allow rapid traffic re-routing in case of operational issues.
+
+### C. Autoscaling & Workload Isolation
+- [ ] **Horizontal Autoscaling (HPA / ASG)**: Configure autoscaling policies based on CPU utilization (> 70%), request rates, or queue depths with conservative scale-in cool-downs.
+- [ ] **Kubernetes Resource Requests & Limits**: Define explicit `requests` and `limits` for CPU and memory on every container. Unbounded containers are strictly prohibited.
+
+### D. Cloud FinOps & Cost Controls
+- [ ] **Budget Alerts**: Set up automated budget alerts at 50%, 80%, and 100% of expected monthly cloud spend with routing to billing channels.
+- [ ] **Idle Resource Pruning**: Identify and delete unattached EBS volumes, idle NAT Gateways, and orphaned staging environments.
+
+### E. Canary & Weighted Ingress Routing
+- [ ] Configure ingress controllers, API gateways, or service meshes (AWS ALB, Cloudflare, Istio) to support weighted canary routing (e.g., 95% stable v1, 5% canary v2).
 
 ---
 
-## 3. Her Maddenin Nedeni (Rationale)
+## 2. Exit Gate (Field Gate: Cloud/SaaS)
 
-| Madde | Neden Zorunlu? |
+Cloud production deployment cannot proceed until **all** of the following criteria are satisfied:
+1. All Cloud/SaaS checklist items are completed in `GOLIVE.md`.
+2. Running `terraform plan` outputs `No changes. Infrastructure is up-to-date.`
+3. Active TLS certificates verified via HTTPS with valid expiration and HSTS headers.
+4. Cloud provider budget alerts verified active with configured notification channels.
+
+---
+
+## 3. Rationale
+
+| Action Item | Why It Is Mandatory |
 |:---|:---|
-| IaC Zorunluluğu | Konsoldan elle açılan bir güvenlik grubu kuralı felaket anında unutulur; altyapıyı başka bir bölgede (region) sıfırdan ayağa kaldırmayı imkansız kılar. |
-| Düşük DNS TTL | Canlıya geçiş anında sunucu IP'si veya ingress değişirse, 86400s (24 saat) TTL yüzünden kullanıcıların yarısı eski sunucuya gidip hata almaya devam eder. |
-| Resource Limits | Sınır konulmamış tek bir bellek sızıntılı pod, Kubernetes düğümündeki tüm RAM'i tüketip yanındaki kritik veritabanı veya ingress pod'larını da (OOMKilled) öldürür. |
-| FinOps Bütçe Alarmı | DDoS saldırısı, hatalı bir worker döngüsü veya auto-scaling bug'ı yüzünden hafta sonu binlerce dolarlık faturayla karşılaşılmasını önler. |
+| Strict IaC Enforcement | Manual console changes are easily forgotten during disaster recovery, making it impossible to reconstruct infrastructure in an alternate region. |
+| Low DNS TTL | If server IPs or ingress endpoints change during release, high TTLs (e.g., 24h) cause half of user traffic to route to decommissioned instances. |
+| Resource Requests & Limits | A single memory-leaking container on Kubernetes will consume all node memory, causing the node to evict critical co-located database and ingress pods. |
+| FinOps Cost Alarms | Unmonitored autoscaling loops or DDoS traffic can easily result in thousands of dollars in surprise cloud provider bills. |
 
 ---
 
-## 4. Sık Yapılan Hatalar (Common Pitfalls)
+## 4. Common Pitfalls
 
-- ❌ **Konsoldan "Hızlıca" Ayar Değiştirmek**: Acil durumda konsoldan IP veya port açıp bunu Terraform koduna eklememek (State Drift).
-- ❌ **State Dosyasını Git'e Atmak**: `terraform.tfstate` dosyasını git deposuna ekleyip içindeki veritabanı şifrelerini ifşa etmek.
-- ❌ **NAT Gateway Maliyet Tuzağı**: İki farklı kullanılmayan availability zone'a NAT Gateway açıp ayda yüzlerce dolar boş yere ödemek.
-- ❌ **Ölçekleme Süresini Hesaba Katmamak**: Yeni sunucunun ayağa kalkıp trafiği kabul etmesinin 3-5 dakika süreceğini unutup ani trafik dalgalanmalarında çökmek.
+- ❌ **Making "Quick" Console Tweaks**: Modifying security group rules in the cloud console without committing them to IaC, causing state drift.
+- ❌ **Committing State Files to Git**: Pushing `terraform.tfstate` containing cleartext database passwords into source control.
+- ❌ **Orphaned NAT Gateway Expenses**: Provisioning idle NAT Gateways in multiple unused availability zones, incurring unnecessary recurring monthly costs.
+- ❌ **Underestimating Autoscaling Spin-up Time**: Expecting new compute nodes to handle sudden traffic spikes instantly without accounting for 3-5 minute boot and provisioning delays.

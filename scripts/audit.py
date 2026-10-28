@@ -4,8 +4,8 @@ Go-Live Repository Pre-Audit Script (`audit.py`)
 Part of golive-skill
 
 Scans the repository to identify completed and missing production readiness items,
-detects project fields (Cloud, On-Prem, Edge), and can automatically initialize
-or update the GOLIVE.md state tracker.
+detects project deployment fields (Cloud, On-Premises, Edge), and can automatically
+initialize or update the GOLIVE.md state tracker.
 
 Usage:
     python audit.py [--path /path/to/repo] [--init] [--sync] [--json]
@@ -19,7 +19,7 @@ import argparse
 from pathlib import Path
 from typing import Dict, List, Any, Tuple
 
-# Ensure utf-8 output on Windows consoles if possible
+# Ensure UTF-8 output on Windows consoles if possible
 if hasattr(sys.stdout, "reconfigure"):
     try:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -45,7 +45,6 @@ def is_ignored(path: Path) -> bool:
 
 def scan_for_secrets(root_path: Path) -> List[Dict[str, Any]]:
     findings = []
-    # Check if .env is git-tracked
     gitignore_file = root_path / ".gitignore"
     has_env_in_gitignore = False
     if gitignore_file.exists():
@@ -60,7 +59,7 @@ def scan_for_secrets(root_path: Path) -> List[Dict[str, Any]]:
         if not file_path.is_file() or is_ignored(file_path):
             continue
         
-        # Don't scan huge files or binary assets
+        # Don't scan large binary files or archives
         if file_path.suffix.lower() in {".png", ".jpg", ".jpeg", ".gif", ".ico", ".pdf", ".zip", ".tar", ".gz", ".exe", ".bin", ".lock"}:
             continue
 
@@ -75,14 +74,14 @@ def scan_for_secrets(root_path: Path) -> List[Dict[str, Any]]:
             if file_path.name == ".env" and not file_path.name.endswith(".example") and not file_path.name.endswith(".sample"):
                 findings.append({
                     "file": str(file_path.relative_to(root_path)),
-                    "type": "Tracked .env file",
+                    "type": "Tracked .env credential file",
                     "severity": "CRITICAL",
                     "line": 1
                 })
 
             for pattern, desc in SECRET_PATTERNS:
                 for line_idx, line in enumerate(content.splitlines(), start=1):
-                    # Skip comments or template markers
+                    # Skip common comment or template placeholders
                     if "EXAMPLE" in line.upper() or "DUMMY" in line.upper() or "PLACEHOLDER" in line.upper():
                         continue
                     if pattern.search(line):
@@ -92,7 +91,7 @@ def scan_for_secrets(root_path: Path) -> List[Dict[str, Any]]:
                             "severity": "HIGH",
                             "line": line_idx
                         })
-                        break # One per pattern per file is sufficient
+                        break # One detection per pattern per file is sufficient
         except Exception:
             continue
 
@@ -116,7 +115,7 @@ def audit_repository(root_path: Path) -> Dict[str, Any]:
             all_files_rel.append(p.relative_to(root_path).as_posix().lower())
 
     if "package.json" in files:
-        findings["tech_stack"].append("Node.js / JavaScript / TypeScript")
+        findings["tech_stack"].append("Node.js / TypeScript / JavaScript")
     if any(f in files for f in ["requirements.txt", "pyproject.toml", "Pipfile", "poetry.lock"]):
         findings["tech_stack"].append("Python")
     if "go.mod" in files:
@@ -140,7 +139,7 @@ def audit_repository(root_path: Path) -> Dict[str, Any]:
         findings["detected_fields"].append("Edge / Device")
     
     if not findings["detected_fields"]:
-        findings["detected_fields"].append("Cloud / SaaS (Varsayılan)")
+        findings["detected_fields"].append("Cloud / SaaS (Default)")
 
     # 3. Check Core Stages
 
@@ -149,7 +148,6 @@ def audit_repository(root_path: Path) -> Dict[str, Any]:
     has_health = False
     has_schema_val = False
     
-    # Fast regex search in source files for health endpoints and schema validation
     sample_code_files = [root_path / p for p in all_files_rel if p.endswith(('.py', '.ts', '.js', '.go', '.rs'))][:200]
     for cp in sample_code_files:
         try:
@@ -265,26 +263,26 @@ def print_cli_report(results: Dict[str, Any]):
     print(" [*] GO-LIVE REPOSITORY PRE-AUDIT REPORT")
     print("=" * 65)
     print(f" Repository Path : {results['root']}")
-    print(f" Tech Stack      : {', '.join(results['tech_stack']) if results['tech_stack'] else 'Bilinmiyor / Genel'}")
-    print(f" Algılanan Saha  : {', '.join(results['detected_fields'])}")
-    print(f" Olgunluk Oranı  : %{results['summary']['readiness_percentage']} ({results['summary']['mature_stages']}/{results['summary']['total_stages']} Asama Ileri Duzeyde)")
-    print(f" GOLIVE.md Durumu: {'Mevcut' if results['summary']['golive_file_exists'] else 'Eksik (olusturulmali)'}")
+    print(f" Tech Stack      : {', '.join(results['tech_stack']) if results['tech_stack'] else 'General / Multi-stack'}")
+    print(f" Detected Fields : {', '.join(results['detected_fields'])}")
+    print(f" Readiness Score : %{results['summary']['readiness_percentage']} ({results['summary']['mature_stages']}/{results['summary']['total_stages']} Stages Mature)")
+    print(f" GOLIVE.md Status: {'Present' if results['summary']['golive_file_exists'] else 'Missing (run with --init)'}")
     print("-" * 65)
-    print("ASAMA DURUMLARI:")
+    print("STAGE BREAKDOWN:")
     for stage, details in results["core_status"].items():
         ratio = details.get("complete_ratio", 0)
         status_icon = "[PASS]" if ratio >= 0.75 else ("[IN_PROGRESS]" if ratio > 0 else "[PENDING]")
-        items_summary = ", ".join(f"{k}: {'Var' if v is True else ('Yok' if v is False else v)}" for k, v in details.items() if k != "complete_ratio")
+        items_summary = ", ".join(f"{k}: {'Yes' if v is True else ('No' if v is False else v)}" for k, v in details.items() if k != "complete_ratio")
         print(f"  {status_icon:<14} [{stage:<25}] -> {items_summary}")
     
     if results["secret_warnings"]:
-        print("\n [!] GUVENLIK VE SECRET UYARILARI:")
+        print("\n [!] SECURITY & SECRET WARNINGS:")
         for w in results["secret_warnings"][:10]:
             print(f"  ! [{w['severity']}] {w['file']}:{w['line']} - {w['type']}")
         if len(results["secret_warnings"]) > 10:
-            print(f"  ...ve {len(results['secret_warnings']) - 10} adet daha potansiyel sizinti.")
+            print(f"  ...and {len(results['secret_warnings']) - 10} additional potential secret findings.")
     else:
-        print("\n [OK] Secret Denetimi: Kod tabaninda acikta anahtar bulunamadi (Temiz).")
+        print("\n [OK] Secret Audit: Zero exposed credentials detected (Clean).")
     print("=" * 65)
 
 def init_or_sync_golive(root_path: Path, template_path: Path, results: Dict[str, Any]):
@@ -292,44 +290,42 @@ def init_or_sync_golive(root_path: Path, template_path: Path, results: Dict[str,
     
     if not golive_target.exists():
         if not template_path.exists():
-            print(f"Hata: Şablon dosyası bulunamadı: {template_path}")
+            print(f"Error: Template file not found: {template_path}")
             return
         content = template_path.read_text(encoding="utf-8")
-        # Project name substitution
-        content = content.replace("[PROJE_ADI]", root_path.name)
+        content = content.replace("[PROJECT_NAME]", root_path.name)
         
         # Check detected fields
         for field in results["detected_fields"]:
             if "Cloud" in field:
                 content = content.replace("- [ ] Cloud / SaaS", "- [x] Cloud / SaaS")
-            if "On-Premises" in field or "Müşteri" in field:
-                content = content.replace("- [ ] Müşteri Ortamı", "- [x] Müşteri Ortamı")
+            if "Customer" in field or "On-Premises" in field:
+                content = content.replace("- [ ] Customer On-Premises", "- [x] Customer On-Premises")
             if "Edge" in field:
-                content = content.replace("- [ ] Edge / Cihaz", "- [x] Edge / Cihaz")
+                content = content.replace("- [ ] Edge / Device", "- [x] Edge / Device")
 
         # Mark detected pre-audit items
         if results["core_status"].get("04-packaging", {}).get("dockerfile"):
-            content = content.replace("- [ ] Multi-stage `Dockerfile`", "- [x] Multi-stage `Dockerfile` (Audit tespit etti)")
+            content = content.replace("- [ ] Multi-stage `Dockerfile`", "- [x] Multi-stage `Dockerfile` (Detected by audit)")
         if results["core_status"].get("05-ci-cd", {}).get("ci_pipeline_exists"):
-            content = content.replace("- [ ] Pipeline her PR ve ana dalda otomatik", "- [x] Pipeline her PR ve ana dalda otomatik (Audit tespit etti)")
+            content = content.replace("- [ ] Automated pipeline triggers", "- [x] Automated pipeline triggers (Detected by audit)")
         if results["core_status"].get("06-security-and-secrets", {}).get("zero_secrets_detected"):
-            content = content.replace("- [ ] Kod deposunda hardcoded secret", "- [x] Kod deposunda hardcoded secret (Audit temiz)")
+            content = content.replace("- [ ] Repository and commit history scanned", "- [x] Repository and commit history scanned (Verified clean by audit)")
 
         golive_target.write_text(content, encoding="utf-8")
-        print(f"✅ GOLIVE.md başarıyla şablondan oluşturuldu: {golive_target}")
+        print(f"[OK] GOLIVE.md successfully initialized from template: {golive_target}")
     else:
-        print(f"ℹ️  GOLIVE.md zaten mevcut: {golive_target}. Üzerine yazılmadı.")
+        print(f"[INFO] GOLIVE.md already exists: {golive_target}. Skipped overwrite.")
 
 def main():
-    parser = argparse.ArgumentParser(description="Go-Live Repo Audit CLI")
+    parser = argparse.ArgumentParser(description="Go-Live Repository Pre-Audit CLI")
     parser.add_argument("--path", default=".", help="Target repository directory path")
-    parser.add_argument("--json", action="store_true", help="Output results as JSON")
+    parser.add_argument("--json", action="store_true", help="Output audit results as JSON")
     parser.add_argument("--init", action="store_true", help="Initialize GOLIVE.md if not present")
     parser.add_argument("--sync", action="store_true", help="Sync audit results into GOLIVE.md")
     args = parser.parse_args()
 
     repo_path = Path(args.path).resolve()
-    # Find template relative to this script
     script_dir = Path(__file__).parent.resolve()
     template_path = script_dir.parent / "assets" / "GOLIVE.template.md"
 

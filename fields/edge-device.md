@@ -1,56 +1,56 @@
-# Saha Eklentisi: Edge ve Cihaz (Edge, Embedded & IoT Field Branch)
+# Field Extension: Edge, Embedded & IoT Devices
 
-> **Amaç**: Uç cihazlarda (Raspberry Pi, NVIDIA Jetson, endüstriyel IPC'ler, robotik üniteler, drone ve mikrobilgisayarlar) çalışan gömülü yazılımların donanım uyumluluğunu, çevrimdışı dayanıklılığını, kaynak sınırlarını ve hatasız OTA (Over-The-Air) güncelleme güvenliğini temin etmek.
-
----
-
-## 1. Yapılacak Maddeler (Action Items)
-
-### A. Donanım ve Mimari Uyumluluğu (Hardware & Architecture)
-- [ ] **Çoklu Mimari Derleme (Cross-Compilation / Multi-Arch)**: Hedef işlemci mimarisine (`linux/arm64`, `linux/arm/v7`, `linux/amd64`) göre çapraz derlenmiş ve test edilmiş binary veya konteyner imajı üretilmelidir.
-- [ ] **Donanım Hızlandırıcı ve Sürücü Doğrulaması**: Model çıkarımı (inference) veya ağır işlem için GPU (CUDA/TensorRT), NPU (Hailo, Rockchip NPU, Coral TPU) veya VPU sürücülerinin doğru sürümleri ve izinleri doğrulanmalıdır.
-
-### B. Çevrimdışı Çalışma ve Yerel Veri Senkronizasyonu (Offline-First)
-- [ ] **Kesintisiz Çevrimdışı Mod**: İnternet veya yerel ağ koptuğunda cihazın temel tüm fonksiyonlarını yerel önbellek ve yerel gömülü veritabanı (SQLite, RocksDB, DuckDB) üzerinden sürdürebilmesi sağlanmalıdır.
-- [ ] **Kuyruklu Senkronizasyon (Store-and-Forward)**: Ağ bağlantısı geri geldiğinde cihazda biriken telemetri ve olay verileri ağ tıkanıklığı yaratmadan, logaritmik aralıklarla (backoff) sunucuya iletilmelidir.
-
-### C. A/B Güncelleme ve Tuğla Koruması (OTA & Anti-Brick Recovery)
-- [ ] **A/B Sistem Bölümleme (Dual Partition OTA)**: Güncelleme aktif olmayan pasif bölüme (Slot B) yazılmalı; cihaz yeniden başladığında yeni sürüm test edilmeli ve sağlık kontrolünden geçmezse otomatik olarak çalışan eski bölüme (Slot A) geri dönmelidir (Fail-Safe Bootloader / RAUC / Mender).
-- [ ] **Donanım ve Yazılım Watchdog Timer**: Sistem donduğunda veya ana proses kilitlendiğinde cihazı otomatik olarak yeniden başlatan fiziksel veya yazılımsal watchdog devrede olmalıdır.
-
-### D. Kaynak Sınırları ve Termal Yönetim (Resource Limits & Thermal)
-- [ ] **RAM ve Disk Koruma**:
-  - RAM kullanım tavanı (örn. toplam belleğin %60'ı) belirlenmeli, OOM killer'ın kritik cihaz süreçlerini öldürmesi engellenmelidir.
-  - Flash bellek ömrünü korumak için loglar RAM disk üzerinde (`tmpfs`) tutulmalı veya diske yazım sıklığı sınırlandırılmalıdır.
-- [ ] **Termal Kısılma (Thermal Throttling) Dayanıklılığı**: Cihaz yüksek ortam sıcaklığında tam yük altında test edilmeli; CPU frekansı kısıldığında bile kritik algoritmaların zaman aşımına uğramadığı teyit edilmelidir.
-- [ ] **Güç Kesintisi Dayanıklılığı**: Cihaz tam veri yazarken elektriğin aniden kesilmesi durumunda dosya sisteminin bozulmadığı (power-loss resilience, journaling/overlayfs) test edilmelidir.
+> **Objective**: Manage hardware compatibility, offline resilience, resource ceilings, thermal throttling constraints, and fail-safe over-the-air (OTA) updates for software running on physical edge devices (NVIDIA Jetson, Raspberry Pi, industrial IPCs, robotics, IoT micro-computers).
 
 ---
 
-## 2. Çıkış Kriteri (Field Gate: Edge/Device)
+## 1. Action Items
 
-Aşağıdaki koşulların **tamamı** sağlanmadan Edge sahaya sürüm dağıtılamaz:
-1. `GOLIVE.md` dosyasındaki Edge/Cihaz maddeleri eksiksiz işaretlenmiş olmalı.
-2. Hedef donanım platformunda (gerçek cihaz üzerinde) en az 24 saatlik stres testi tamamlanmış ve 0 çökme/bellek sızıntısı kaydedilmiş olmalı.
-3. Simüle edilmiş hatalı bir OTA güncellemesinde cihazın tuğlaya (brick) dönüşmeden otomatik olarak eski kararlı sürüme döndüğü kanıtlanmalı.
-4. Yazma esnasında 5 kez elektrik kesilip yeniden başlatıldığında veritabanı veya işletim sistemi bozulması (corruption) yaşanmadığı test edilmiş olmalıdır.
+### A. Hardware & Architectural Compatibility
+- [ ] **Multi-Architecture Cross-Compilation**: Build and validate binaries and container images for target processor architectures (`linux/arm64`, `linux/arm/v7`, `linux/amd64`).
+- [ ] **Hardware Acceleration & Driver Compatibility**: Validate correct runtime driver versions and permissions for hardware accelerators, GPUs (CUDA, TensorRT), NPUs (Hailo, Rockchip NPU, Coral TPU), and camera/sensor serial buses (V4L2, CAN, I2C).
+
+### B. Offline-First Resilience & Persistence
+- [ ] **Uninterrupted Offline Mode**: Ensure the core operational loop continues functioning locally via embedded storage (SQLite, RocksDB, DuckDB) when internet or local network connectivity is severed.
+- [ ] **Store-and-Forward Queuing**: When network connectivity is restored, transmit buffered telemetry and state events using exponential backoff without saturating bandwidth.
+
+### C. A/B Dual-Partition OTA & Anti-Brick Protection
+- [ ] **Dual-Partition Fail-Safe OTA**: Apply software and OS updates to an inactive partition (Slot B). Upon reboot, bootloader logic must verify software health and automatically fall back to the functional partition (Slot A) if health checks fail (e.g., via RAUC, Mender, or SWUpdate).
+- [ ] **Hardware & Software Watchdog Timers**: Enable hardware or kernel-level watchdog timers to trigger automatic hardware resets if the primary application process hangs.
+
+### D. Resource Constraints & Thermal Management
+- [ ] **Memory & Flash Endurance**:
+  - Enforce strict RAM caps (e.g., maximum 60% of total memory) to prevent kernel OOM killer panics.
+  - Mitigate flash memory wear-out by redirecting frequent operational logs to a RAM disk (`tmpfs`) or throttling disk writes.
+- [ ] **Thermal Throttling Resilience**: Stress-test the device at elevated ambient temperatures; ensure mission-critical control loops maintain timing deadlines even when CPU frequencies are throttled.
+- [ ] **Power-Loss Recovery**: Test unexpected power-cut scenarios; verify that file systems (overlayfs, journaling) and databases recover cleanly without data corruption.
 
 ---
 
-## 3. Her Maddenin Nedeni (Rationale)
+## 2. Exit Gate (Field Gate: Edge/Device)
 
-| Madde | Neden Zorunlu? |
+An edge software release cannot be deployed to field devices until **all** of the following criteria are satisfied:
+1. All Edge/Device checklist items are completed in `GOLIVE.md`.
+2. A continuous 24-hour stress test on target hardware completes with zero application crashes, kernel panics, or memory leaks.
+3. A simulated corrupted OTA update demonstrates automatic fallback to the previous operational partition without bricking the device.
+4. Simulating five sudden power interruptions during active disk writes produces zero file system or database corruption upon reboot.
+
+---
+
+## 3. Rationale
+
+| Action Item | Why It Is Mandatory |
 |:---|:---|
-| A/B Güvenli OTA | Sahadaki yüzlerce cihaza uzaktan fiziksel müdahale imkansızdır. Başarısız bir güncelleme cihazı kilitlerse (bricked) sahaya teknik servis göndermek devasa maliyet yaratır. |
-| Store-and-Forward | Fabrika veya tarım arazisi gibi noktalarda ağ günlerce kesilebilir. Çevrimdışı önbellekleme yoksa kritik sensör ve üretim verisi kalıcı olarak kaybolur. |
-| Flash Bellek Koruması | Cihaz üzerindeki eMMC veya SD kartlar sürekli log yazıldığında aylar içinde aşınarak (wear-out) kalıcı donanım arızasına yol açar. |
-| Güç Kesintisi Dayanıklılığı | Endüstriyel ortamlarda ve sahadaki jeneratör geçişlerinde elektrik aniden kesilir. Dosya sistemi bozulursa cihaz bir daha asla boot edemez. |
+| Dual-Partition A/B OTA | Physical access to deployed edge devices in the field is often impossible. A single bricked update can incur immense maintenance and truck-roll costs. |
+| Store-and-Forward Buffering | Network drops can persist for days in industrial or agricultural settings. Without local persistence, critical sensor telemetry is permanently lost. |
+| Flash Wear-out Mitigation | Writing continuous debug logs to onboard eMMC or SD cards degrades storage cells within months, causing irreversible hardware failure. |
+| Power-Cut Resilience | Power cuts and generator fluctuations are frequent in industrial edge environments. Corrupted filesystems prevent devices from completing reboot sequences. |
 
 ---
 
-## 4. Sık Yapılan Hatalar (Common Pitfalls)
+## 4. Common Pitfalls
 
-- ❌ **Geliştirici Bilgisayarında Derleyip ARM'da Çalışacağını Sanmak**: x86-64'e göre derlenen binary'yi Raspberry Pi'ye atıp `Exec format error` almak.
-- ❌ **SD Karta Sürekli Debug Logu Yazmak**: Birkaç ay içinde SD kartın yazma ömrünü tüketip cihazı kullanılamaz hale getirmek.
-- ❌ **Ağ Kesintisinde Sonsuz Beklemek**: Ağ çağrılarına timeout vermeyip, ağ koptuğunda ana arayüzün veya kontrol döngüsünün donmasına yol açmak.
-- ❌ **Tek Partition Üzerine Güncelleme Yazmak**: Güncelleme inerken internet kesildiğinde cihazın yarım kalmış bozuk dosyalarla yeniden başlayamaması.
+- ❌ **Compiling on x86 for ARM**: Compiling binaries on developer workstations and deploying directly to an ARM target, producing `Exec format error`.
+- ❌ **Unbuffered Logging to SD Cards**: Allowing high-frequency debug logging directly to flash storage, burning out hardware endurance limits.
+- ❌ **Unbounded Network Calls in Control Loops**: Blocking execution loops on remote HTTP requests without timeouts, causing local hardware control to freeze when connectivity drops.
+- ❌ **Single-Partition Updates**: Overwriting the active partition in place; a network interruption mid-update leaves the device permanently unbootable.

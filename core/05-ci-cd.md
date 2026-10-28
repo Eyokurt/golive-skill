@@ -1,60 +1,60 @@
-# Aşama 05: Sürekli Entegrasyon ve Dağıtım (CI/CD Pipeline)
+# Stage 05: Continuous Integration & Deployment (CI/CD Pipeline)
 
-> **Amaç**: Kodun test edilmesi, taranması, paketlenmesi ve canlıya aktarılması sürecini insan hatasından arındırıp tamamen tekrarlanabilir, şeffaf, onay mekanizmalı ve otomatik bir ardışık düzene (pipeline) oturtmak.
-
----
-
-## 1. Yapılacak Maddeler (Action Items)
-
-### A. Pipeline Aşamaları ve Katı Kontroller (Strict Automated Gates)
-- [ ] **Tetikleyiciler**: Her Pull Request (PR) açıldığında ve ana dala (`main`/`master`) her merge işleminde CI pipeline'ı otomatik tetiklenmelidir.
-- [ ] **Sıralı Adım Mimarisi**:
-  1. *Lint & Format Check*: Kod standartları ve tip denetimi (`tsc --noEmit`, `flake8`, `biome`, `ruff`).
-  2. *Security SAST & Secret Scan*: Statik kod analizi ve sızıntı denetimi (`gitleaks`, `semgrep`).
-  3. *Automated Tests*: Birim ve entegrasyon testlerinin yürütülmesi.
-  4. *Docker Build & Vulnerability Scan*: Konteyner derleme ve imaj CVE taraması.
-  5. *Artifact Publish*: İmajın özel registry'ye (ECR, GCR, Harbor) SHA etiketiyle yüklenmesi.
-- [ ] **Adım Geçiş Zorunluluğu (Fail-Fast)**: Herhangi bir aşama (örn. linter veya tek bir birim test) başarısız olduğunda pipeline derhal durmalı ve sonraki adımlara asla geçmemelidir.
-
-### B. Ortam İzolasyonu ve Secret Güvenliği
-- [ ] **Ortam Ayrımı (Environment Scopes)**: CI/CD değişkenleri ve yetkileri `Development`, `Staging` ve `Production` ortamları için birbirinden tamamen izole edilmiş olmalıdır.
-- [ ] **Kısa Ömürlü Kimlik Bilgileri (OIDC)**: CI/CD sağlayıcısı (GitHub Actions, GitLab CI) ile bulut sağlayıcısı (AWS, GCP, Azure) arasında sabit uzun ömürlü erişim anahtarları (`AWS_ACCESS_KEY_ID`) yerine OpenID Connect (OIDC) ve IAM Rol üstlenme (AssumeRole) kullanılmalıdır.
-- [ ] **Log Maskeleme**: Pipeline loglarında secret'ların otomatik sansürlendiği (masked) teyit edilmelidir.
-
-### C. Dal Koruması ve Manuel Onay Kapıları (Branch Protection & Approvals)
-- [ ] **Ana Dal Koruması (Branch Protection Rules)**:
-  - `main` dalına doğrudan push (`git push origin main`) kesinlikle engellenmiş olmalıdır.
-  - En az 1 kıdemli mühendis kod inceleme (PR approval) onayı zorunlu olmalıdır.
-  - Tüm CI kontrollerinin (status checks) yeşil olması şart koşulmalıdır.
-- [ ] **Production Yayın Onayı (Manual Deployment Gate)**:
-  - Staging ortamına dağıtım otomatik yapılabilirken, Production ortamına dağıtım yetkili bir operatörün/yayın sorumlusunun manuel onayı (manual approval button) olmadan başlayamaz.
+> **Objective**: Eliminate human error from building, testing, auditing, and deploying software by establishing a fully automated, reproducible, gate-driven pipeline with explicit environment separation and manual approval controls for production.
 
 ---
 
-## 2. Çıkış Kriteri (Exit Gate)
+## 1. Action Items
 
-Aşağıdaki koşulların **tamamı** sağlanmadan Aşama 06'ya geçilemez:
-1. `GOLIVE.md` dosyasında Aşama 05 maddelerinin tamamı işaretlenmiş olmalı.
-2. Örnek bir PR açılarak veya tetiklenerek tüm CI adımlarının (Lint -> Test -> Build -> Scan) hatasız tamamlandığı doğrulanmış olmalı.
-3. Ana dal koruma kurallarının (Branch Protection) aktif olduğu repository ayarlarından teyit edilmiş olmalı.
-4. Production ortamına geçişte manuel onay kapısının devrede olduğu doğrulanmalıdır.
+### A. Pipeline Stages & Automated Gates
+- [ ] **Triggers**: Automated pipelines must run on all Pull Requests and merges to primary branches (`main`/`master`).
+- [ ] **Sequential Stages**:
+  1. *Lint & Typecheck*: Static analysis and type verification (`tsc --noEmit`, `ruff`, `flake8`, `biome`).
+  2. *Security SAST & Secret Scan*: Code analysis and secret detection (`gitleaks`, `semgrep`).
+  3. *Automated Testing*: Unit and integration test execution with coverage checks.
+  4. *Docker Build & Vulnerability Scan*: Container build and CVE scanning (Trivy).
+  5. *Artifact Publishing*: Push verified container images to private registries with immutable SHA tags.
+- [ ] **Fail-Fast Enforcement**: If any step fails (even formatting or a single test), the pipeline must abort immediately and block subsequent actions.
+
+### B. Environment Isolation & Secret Security
+- [ ] **Environment Separation**: Maintain distinct variable scopes and deployment credentials across `Development`, `Staging`, and `Production` environments.
+- [ ] **Short-Lived Cloud Credentials (OIDC)**: Connect CI/CD runners (GitHub Actions, GitLab CI) to cloud providers (AWS, GCP, Azure) via OpenID Connect (OIDC) and IAM role assumption rather than static, long-lived access keys.
+- [ ] **Secret Masking**: Verify that all CI secrets and tokens are automatically masked in build logs.
+
+### C. Branch Protection & Manual Approval Gates
+- [ ] **Main Branch Protection Rules**:
+  - Direct pushes to `main` (`git push origin main`) must be strictly disabled.
+  - Require at least one approved peer review from senior maintainers.
+  - Require all automated status checks to pass before merging.
+- [ ] **Manual Production Deployment Gate**:
+  - Deployments to staging may proceed automatically, but production releases must require explicit manual approval from authorized engineers.
 
 ---
 
-## 3. Her Maddenin Nedeni (Rationale)
+## 2. Exit Gate (Gate 05)
 
-| Madde | Neden Zorunlu? |
+Stage 06 cannot commence until **all** of the following criteria are satisfied:
+1. All Stage 05 checklist items are completed in `GOLIVE.md`.
+2. A verified PR demonstrates clean execution across all stages (Lint -> Test -> Build -> Vulnerability Scan).
+3. Branch protection rules verified active via repository settings.
+4. Production deployment pipeline verified to enforce manual gate approval.
+
+---
+
+## 3. Rationale
+
+| Action Item | Why It Is Mandatory |
 |:---|:---|
-| OIDC ile Buluta Bağlanma | CI platformuna kaydedilen statik AWS Access Key sızdırıldığında saldırgan aylarca fark edilmeden tüm altyapınızı silebilir veya crypto madenciliği yapabilir. |
-| Branch Protection | Tek bir geliştiricinin yanlışlıkla lokaldeki yarım kalmış veya kırık kodu doğrudan ana dala push'layıp anında canlıya göndermesini engeller. |
-| Manuel Prodüksiyon Onayı | Staging'de gözlemlenmemiş veya beklenmeyen bir saatte (örn. Cuma akşamı veya kampanya ortasında) plansız prodüksiyon güncellemesini önler. |
-| Otomatik Secret Taraması | Bir geliştiricinin kazara commit'e eklediği OpenAI veya Stripe anahtarının depoya girdiği saniyede yakalanmasını sağlar. |
+| OIDC Authentication | Static AWS access keys leaked from CI configurations allow attackers to compromise cloud infrastructure without expiration. |
+| Branch Protection | Prevents developers from accidentally pushing broken or untested local code straight to production branches. |
+| Manual Production Gate | Prevents inadvertent deployments during off-hours, holidays, or when on-call teams are unavailable to respond to incidents. |
+| Automated Secret Scanning | Catches mistakenly committed API keys and credentials the moment code enters the pipeline. |
 
 ---
 
-## 4. Sık Yapılan Hatalar (Common Pitfalls)
+## 4. Common Pitfalls
 
-- ❌ **`git push --force` İznini Açık Bırakmak**: Ana dal geçmişinin kazara ezilmesine yol açmak.
-- ❌ **`--no-verify` ile Testleri Atlamak**: CI'da test çalıştırmak yerine `if: always()` koyup başarısız testlere rağmen yayına devam etmek.
-- ❌ **CI Loglarına Secret Yazdırmak**: `echo $SECRET_KEY` veya verbose debug logları ile şifreleri konsol çıktısına dökmek.
-- ❌ **Tek Ortam Kullanmak**: Staging ortamı olmadan doğrudan geliştirici makinesinden prodüksiyon veritabanına deploy almak.
+- ❌ **Allowing `--force` Pushes on Primary Branches**: Permitting developers to overwrite commit history and bypass audit trails.
+- ❌ **Bypassing Failing Tests**: Adding `if: always()` or skipping tests in CI to force deployments through.
+- ❌ **Printing Secrets to Build Logs**: Running verbose debug scripts (`echo $SECRET`) that expose credentials in publicly visible build outputs.
+- ❌ **Deploying Directly from Local Workstations**: Deploying to production without going through CI pipelines, eliminating reproducibility and accountability.

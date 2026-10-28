@@ -3,76 +3,76 @@
 [![Antigravity Skill](https://img.shields.io/badge/Antigravity-Skill-blue.svg)](https://github.com/Eyokurt/golive-skill)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-brightgreen.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Architecture: Multi-Field](https://img.shields.io/badge/Architecture-Multi--Field-purple.svg)](#-saha-dallari-field-branches)
+[![Architecture: Multi-Field](https://img.shields.io/badge/Architecture-Multi--Field-purple.svg)](#-field-branches)
 
-**`golive-skill`**, yapay zeka kodlama ajanları (Google Antigravity, Claude, Cursor) ve modern DevOps/Mühendislik ekipleri için tasarlanmış **otonom, aşamalı ve durum takip eden bir canlıya alma (go-live) orkestratörüdür**.
+**`golive-skill`** is an autonomous, gate-driven production release and go-live orchestrator designed for AI coding agents (Google Antigravity, Claude, Cursor) and modern software engineering teams.
 
-Backend sertleştirmeden başlayarak kalite değerlendirmesi, frontend optimizasyonu, paketleme, CI/CD, güvenlik, gözlemlenebilirlik ve yayın/rollback adımlarını katı **çıkış kapıları (exit gates)** ile yönetir. Durum bilgisini projenin kök dizinindeki `GOLIVE.md` dosyasında saklar ve hiçbir aşamanın kapısı doğrulanmadan sonrakine geçişe izin vermez.
-
----
-
-## 🎯 Temel Felsefe ve Dokunulmaz Kurallar
-
-1. **Yıkıcı İşlemlerde Plan ve Onay Zorunluluğu (Safety Brake)**:
-   - Veritabanı şeması değişiklikleri, pod durdurma, DNS yönlendirmesi veya altyapı güncellemeleri (`terraform apply`, `helm upgrade`) öncesinde kullanıcıya açık bir etki analizi sunulmalı ve açık onay alınmalıdır.
-2. **Sıfır Secret Prensibi (Zero-Secrets-in-Code)**:
-   - Parolalar, API token'ları, özel anahtarlar kesinlikle koda, commit geçmişine veya `GOLIVE.md` durum dosyasına yazılamaz; sadece Vault/KMS üzerinden yönetilir.
-3. **Hedef Ortam ve Bağlam Doğrulaması (Context Verification)**:
-   - Komut çalıştırılmadan önce aktif ortam (`$env:NODE_ENV`, `kubectl current-context`, AWS hesap kimliği) doğrulanır; yanlış hesapta işlem yapılması kesin olarak engellenir.
+Starting from backend hardening, it systematically guides and verifies quality evaluation, frontend optimization, packaging, CI/CD, security, observability, and release/rollback procedures using strict **blocking exit gates**. It persists operational state within a repository-level `GOLIVE.md` file, guaranteeing that no phase is bypassed until its exit criteria are verified.
 
 ---
 
-## 🔄 Yaşam Döngüsü ve Çalışma Akışı
+## 🎯 Core Philosophy & Prime Rules
+
+1. **Safety Brake on Destructive Actions**:
+   - Irreversible actions—such as dropping database columns, modifying DNS routing, terminating production containers, or applying infrastructure updates (`terraform apply`, `helm upgrade`)—require an explicit impact analysis presented to the user and **explicit confirmation** before execution.
+2. **Zero-Secrets-in-Code Mandate**:
+   - Passwords, API tokens, and private keys must never be committed to code, PR descriptions, or written into `GOLIVE.md`. Manage credentials strictly via Vault or KMS solutions.
+3. **Target Environment & Context Verification**:
+   - Verify active runtime context (`$env:NODE_ENV`, `kubectl current-context`, AWS account ID, database host) before executing commands to prevent running actions against the wrong environment.
+
+---
+
+## 🔄 Lifecycle & Workflow Architecture
 
 ```mermaid
 flowchart TD
-    Start(["🚀 Canlıya Alma Tetiklendi<br/>(deploy / go-live)"]) --> CheckState{"GOLIVE.md<br/>Mevcut mu?"}
+    Start(["🚀 Go-Live Triggered<br/>(deploy / go-live)"]) --> CheckState{"GOLIVE.md<br/>Exists?"}
     
-    CheckState -- Hayır --> InitState["assets/GOLIVE.template.md'den<br/>GOLIVE.md Oluştur"]
-    CheckState -- Evet --> ReadState["GOLIVE.md Oku &<br/>Kaldığı Aşamayı Hatırla"]
+    CheckState -- No --> InitState["Initialize GOLIVE.md<br/>from assets/GOLIVE.template.md"]
+    CheckState -- Yes --> ReadState["Read GOLIVE.md &<br/>Resume Current Stage"]
     
-    InitState --> DetectFields["Hedef Sahaları Belirle<br/>(Cloud, On-Prem, Edge)"]
+    InitState --> DetectFields["Identify Target Fields<br/>(Cloud, On-Prem, Edge)"]
     ReadState --> DetectFields
     
-    DetectFields --> Audit["scripts/audit.py Çalıştır<br/>(Hazır Maddeleri Otomatik İşaretle)"]
+    DetectFields --> Audit["Run scripts/audit.py<br/>(Auto-check Completed Items)"]
     
-    Audit --> Core01["01: Backend Sertleştirme"]
-    Core01 --> Gate01{"Gate 01 Geçti mi?"}
-    Gate01 -- Hayır --> Core01
-    Gate01 -- Evet --> Core02["02: Kalite & Eval"]
+    Audit --> Core01["01: Backend Hardening"]
+    Core01 --> Gate01{"Gate 01 Passed?"}
+    Gate01 -- No --> Core01
+    Gate01 -- Yes --> Core02["02: Quality & Eval"]
     
-    Core02 --> Gate02{"Gate 02 Geçti mi?"}
-    Gate02 -- Hayır --> Core02
-    Gate02 -- Evet --> Core03["03: Frontend Hazırlığı"]
+    Core02 --> Gate02{"Gate 02 Passed?"}
+    Gate02 -- No --> Core02
+    Gate02 -- Yes --> Core03["03: Frontend Readiness"]
     
-    Core03 --> Gate03{"Gate 03 Geçti mi?"}
-    Gate03 -- Hayır --> Core03
-    Gate03 -- Evet --> Core04["04: Paketleme & Container"]
+    Core03 --> Gate03{"Gate 03 Passed?"}
+    Gate03 -- No --> Core03
+    Gate03 -- Yes --> Core04["04: Packaging & Containers"]
     
-    Core04 --> Gate04{"Gate 04 Geçti mi?"}
-    Gate04 -- Hayır --> Core04
-    Gate04 -- Evet --> Core05["05: CI/CD Pipeline"]
+    Core04 --> Gate04{"Gate 04 Passed?"}
+    Gate04 -- No --> Core04
+    Gate04 -- Yes --> Core05["05: CI/CD Pipeline"]
     
-    Core05 --> Gate05{"Gate 05 Geçti mi?"}
-    Gate05 -- Hayır --> Core05
-    Gate05 -- Evet --> Core06["06: Güvenlik & Secret"]
+    Core05 --> Gate05{"Gate 05 Passed?"}
+    Gate05 -- No --> Core05
+    Gate05 -- Yes --> Core06["06: Security & Secrets"]
     
-    Core06 --> Gate06{"Gate 06 Geçti mi?"}
-    Gate06 -- Hayır --> Core06
-    Gate06 -- Evet --> Core07["07: Gözlemlenebilirlik"]
+    Core06 --> Gate06{"Gate 06 Passed?"}
+    Gate06 -- No --> Core06
+    Gate06 -- Yes --> Core07["07: Observability"]
     
-    Core07 --> Gate07{"Gate 07 Geçti mi?"}
-    Gate07 -- Hayır --> Core07
-    Gate07 -- Evet --> Core08["08: Yayın & Rollback"]
+    Core07 --> Gate07{"Gate 07 Passed?"}
+    Gate07 -- No --> Core07
+    Gate07 -- Yes --> Core08["08: Release & Rollback"]
     
-    Core08 --> Gate08{"Gate 08 Geçti mi?"}
-    Gate08 -- Hayır --> Core08
-    Gate08 -- Evet --> FieldCheck{"Özel Saha Dalları<br/>Var mı?"}
+    Core08 --> Gate08{"Gate 08 Passed?"}
+    Gate08 -- No --> Core08
+    Gate08 -- Yes --> FieldCheck{"Target Field<br/>Extensions?"}
     
     FieldCheck -- Cloud / SaaS --> FCloud["fields/cloud-saas.md"]
     FieldCheck -- On-Premises --> FOnPrem["fields/customer-onprem.md"]
     FieldCheck -- Edge / IoT --> FEdge["fields/edge-device.md"]
-    FieldCheck -- Yok / Tamamlandı --> Success(["✅ Canlıya Alındı: LIVE"])
+    FieldCheck -- None / Done --> Success(["✅ Deployment Verified: LIVE"])
     
     FCloud --> Success
     FOnPrem --> Success
@@ -81,95 +81,95 @@ flowchart TD
 
 ---
 
-## 🛠️ Çekirdek Aşamalar (Core Stages)
+## 🛠️ Core Stages
 
-Her aşama dosyasında **Yapılacak Maddeler**, **Çıkış Kriteri (Gate)**, **Her Maddenin Nedeni (Rationale)** ve **Sık Yapılan Hatalar (Pitfalls)** standart olarak yer alır:
+Every stage document standardizes on **Action Items**, **Exit Gate Criteria**, **Technical Rationale**, and **Common Pitfalls**:
 
-| No | Aşama Dosyası | Temel Odak | Çıkış Kapısı (Gate) Kriteri |
+| No | Stage File | Primary Focus | Blocking Exit Gate Criteria |
 |:---|:---|:---|:---|
-| **01** | [`01-backend-hardening.md`](core/01-backend-hardening.md) | Config şeması, fail-fast başlatma, global error handler, `/healthz` & `/readyz`, graceful shutdown, AI token/cost bütçe limiti ve fallback modeli. | Eksik env değişkeninde uygulamanın anında çökmesi; DB kesildiğinde `/readyz`'nin 503 vermesi; LLM maliyet limitinde 429 dönmesi. |
-| **02** | [`02-quality-and-eval.md`](core/02-quality-and-eval.md) | Birim & entegrasyon testleri, E2E kritik akışlar, Golden eval veri seti, gecikme ve yük benchmark'ı. | Testlerin %100 yeşil olması; AI çıktılarının sıfır şema hatası vermesi; p95 yanıt süresinin SLA sınırlarında kalması. |
-| **03** | [`03-frontend-readiness.md`](core/03-frontend-readiness.md) | Sıfır hata ile build, bundle optimizasyonu (<200KB initial), asset caching, 4-durumlu bileşenler, Error Boundary, Anti-AI-Slop standartları. | `npm run build` hatasız tamamlanması; ağ kopukluğunda sayfanın beyaz ekrana düşmemesi; emoji yasağına uyum. |
-| **04** | [`04-packaging.md`](core/04-packaging.md) | Multi-stage Dockerfile, non-root kullanıcı, lockfile sabitleme, `.dockerignore`, Trivy CVE taraması. | Konteynerin `root` olmadan çalışması; imaj taramasında 0 CRITICAL CVE olması. |
-| **05** | [`05-ci-cd.md`](core/05-ci-cd.md) | Sıralı otomatik pipeline (Lint -> Test -> Build -> Scan), OIDC ile buluta bağlanma, ana dal koruması, manuel prodüksiyon onay kapısı. | CI adımlarının hatasız tamamlanması; ana dala doğrudan push yasağının aktif olması. |
-| **06** | [`06-security-and-secrets.md`](core/06-security-and-secrets.md) | Secret taraması (gitleaks), KMS/Vault entegrasyonu, kısıtlı CORS domainleri, CSP/HSTS başlıkları, rate limiting. | Git geçmişinde 0 sızıntı; bağımlılıklarda 0 CRITICAL/HIGH açık; CORS wildcard'ının bulunmaması. |
-| **07** | [`07-observability.md`](core/07-observability.md) | Yapılandırılmış JSON loglama, Correlation/Trace ID, 4 altın sinyal, LLM maliyet/token telemetrisi, alarm eşikleri ve nöbetçi bildirimi. | Test isteği loglarının JSON formatında aynı trace_id ile düşmesi; deneme alarmının kanala ulaşması. |
-| **08** | [`08-release-and-rollback.md`](core/08-release-and-rollback.md) | Sıfır kesinti dağıtım (Blue/Green, Rolling), geriye uyumlu DB migrasyonu (expand-and-contract), duman testleri, tek komutlu anında rollback. | Staging'de geri dönüşün denenmiş olması; duman testlerinin 0 hata ile geçmesi. |
+| **01** | [`01-backend-hardening.md`](core/01-backend-hardening.md) | Config schema validation, fail-fast init, global error handler, `/healthz` & `/readyz`, graceful shutdown, AI token/cost limits & fallback models. | Missing env variable triggers immediate exit; simulated DB outage causes `/readyz` to return HTTP 503; LLM cost cap returns HTTP 429. |
+| **02** | [`02-quality-and-eval.md`](core/02-quality-and-eval.md) | Unit & integration tests, E2E critical flows, Golden eval dataset, latency budgets & load benchmark. | 100% passing tests; zero JSON schema violations on AI eval set; p95 latency adheres to SLA under 1.5x peak load. |
+| **03** | [`03-frontend-readiness.md`](core/03-frontend-readiness.md) | Clean production build, bundle optimization (<200KB initial), asset caching, 4-state components, Error Boundaries, Anti-AI-Slop standards. | `npm run build` succeeds without type/lint errors; network disconnection does not cause blank screen; zero UI chrome emojis. |
+| **04** | [`04-packaging.md`](core/04-packaging.md) | Multi-stage Dockerfile, non-root user (`USER`), pinned lockfiles, `.dockerignore`, image CVE scanner. | Container runs as non-root user (`whoami != root`); Trivy reports zero CRITICAL CVEs. |
+| **05** | [`05-ci-cd.md`](core/05-ci-cd.md) | Automated pipeline (Lint -> Test -> Build -> Scan), OIDC cloud auth, branch protection rules, manual production gate. | CI pipeline completes cleanly; direct push to main branch is blocked; production deploy requires manual sign-off. |
+| **06** | [`06-security-and-secrets.md`](core/06-security-and-secrets.md) | Secret scanning (gitleaks), KMS/Vault secret management, restricted CORS, CSP/HSTS headers, auth rate limiting. | Git history clean of secrets (0 leaks); zero CRITICAL/HIGH dependencies; wildcard CORS rejected. |
+| **07** | [`07-observability.md`](core/07-observability.md) | Structured JSON logging, Correlation/Trace IDs, 4 golden signals, LLM telemetry & cost tracking, actionable alerting rules. | Test request logs appear formatted as JSON with matching trace_id; simulated alarm reaches designated notification channel. |
+| **08** | [`08-release-and-rollback.md`](core/08-release-and-rollback.md) | Zero-downtime deployment (Blue/Green, Rolling), backward-compatible DB migrations (expand/contract), automated smoke tests, single-command rollback. | Rollback drill verified in staging; post-deploy smoke tests pass with 0 errors; error rate stable for 15 mins post-launch. |
 
 ---
 
-## 🌐 Saha Dalları (Field Branches)
+## 🌐 Field Branches
 
-Projenin hedef dağıtım ortamına göre çekirdek sürece eklenen özel gereksinimler:
+Custom architectural requirements applied based on target operational environments:
 
 - ☁️ **Cloud / SaaS ([`fields/cloud-saas.md`](fields/cloud-saas.md))**:
-  - Altyapı kod olarak tanımlı (IaC: Terraform, Pulumi); konsoldan elle müdahale (ClickOps) yasak.
-  - DNS TTL sürelerinin düşürülmesi ve otomatik yenilenen TLS/SSL.
-  - Yatay pod/sunucu ölçekleme (HPA) ve Kubernetes kaynak limitleri.
-  - Bulut bütçe alarmları (FinOps) ve kademeli (Canary) trafik yönlendirme.
-- 🏢 **Müşteri Ortamı ([`fields/customer-onprem.md`](fields/customer-onprem.md))**:
-  - Tek parça kendi kendine yeten kurulum paketi (Docker Compose, Helm).
-  - Tamamen internete kapalı (air-gapped) kurulum ve `precheck.sh` gereksinim doğrulayıcı.
-  - Kurumsal proxy (`HTTP_PROXY`) ve kurum içi özel CA kök sertifikası desteği.
-  - Çevrimdışı kriptografik lisans doğrulama ve tek komutluk log destek paketi (`support-dump.sh`).
-  - Sıfır dış veri sızıntısı (KVKK / GDPR tam uyumu).
-- 🤖 **Edge / Cihaz ([`fields/edge-device.md`](fields/edge-device.md))**:
-  - Hedef işlemci mimarisine (ARM64, Jetson, RPi) göre çapraz derleme ve NPU/GPU sürücü uyumu.
-  - Çevrimdışı çalışma (offline-first) ve yerel veritabanı (SQLite/RocksDB) ile store-and-forward senkronizasyonu.
-  - A/B çift bölümlü güvenli OTA güncellemesi (Anti-Brick) ve donanımsal watchdog.
-  - Flash bellek koruması (`tmpfs` loglama) ve termal kısılma dayanıklılığı.
+  - Declarative Infrastructure as Code (Terraform, Pulumi); zero manual console drift.
+  - Reduced DNS TTL (60-300s) and automated TLS renewal with HSTS.
+  - Horizontal Pod Autoscaling (HPA) and strict container CPU/RAM limits.
+  - FinOps cloud budget alerts and weighted canary ingress routing.
+- 🏢 **Customer On-Premises ([`fields/customer-onprem.md`](fields/customer-onprem.md))**:
+  - Self-contained offline installation bundles (Helm, Docker Compose tarball).
+  - Fully air-gapped installation verification with pre-flight host checks (`precheck.sh`).
+  - Enterprise HTTP proxy and custom corporate Root CA certificate support.
+  - Offline cryptographic licensing and single-command sanitized support dumps (`support-dump.sh`).
+  - Zero external telemetry or third-party asset calls (strict GDPR/KVKK compliance).
+- 🤖 **Edge / Device ([`fields/edge-device.md`](fields/edge-device.md))**:
+  - Multi-architecture cross-compilation (ARM64, Jetson, RPi) and NPU/GPU accelerator drivers.
+  - Robust offline-first operation with embedded persistence (SQLite/RocksDB) and store-and-forward sync.
+  - Dual-partition fail-safe A/B OTA recovery (anti-brick protection) and hardware watchdogs.
+  - Flash memory wear-out mitigation (`tmpfs` logging) and thermal throttling resilience.
 
 ---
 
-## 🔍 Ön Tarama Betiği: `scripts/audit.py`
+## 🔍 Pre-Audit Script: `scripts/audit.py`
 
-Depodaki mevcut hazır maddeleri tespit etmek, sahaları algılamak ve `GOLIVE.md` dosyasını otomatik senkronize etmek için harici bağımlılık gerektirmeyen (yalnızca standart kütüphane) Python betiği:
+A dependency-free Python CLI tool to inspect the repository, detect operational environments, and auto-sync findings into `GOLIVE.md`:
 
 ```powershell
-# Mevcut depoyu tara ve terminal raporunu görüntüle
+# Audit current repository and display report in terminal
 python scripts/audit.py --path .
 
-# Sonuçları JSON formatında al
+# Output audit findings as structured JSON
 python scripts/audit.py --path . --json
 
-# GOLIVE.md dosyası yoksa şablondan oluştur ve hazır maddeleri otomatik işaretle
+# Initialize GOLIVE.md from template and auto-check detected items
 python scripts/audit.py --path . --init
 
-# Mevcut GOLIVE.md dosyasını tarama bulgularıyla güncelle
+# Sync latest repository findings into an existing GOLIVE.md
 python scripts/audit.py --path . --sync
 ```
 
 ---
 
-## 📦 Antigravity'ye Beceri Olarak Ekleme
+## 📦 Installing into Google Antigravity
 
-Bu beceri Google Antigravity kullanıcı becerileri dizinine doğrudan kurulabilir:
+Install this skill into your Antigravity user skills directory:
 
 ```powershell
-# Windows Antigravity global beceri dizinine kopyalama
+# Copy skill into Antigravity global configuration directory
 Copy-Item -Path ".\golive-skill" -Destination "$env:USERPROFILE\.gemini\config\skills\golive-skill" -Recurse -Force
 ```
 
-Kurulum tamamlandığında Antigravity sohbetinde aşağıdaki ifadelerden herhangi birini kullandığınızda beceri otomatik olarak devreye girer:
-- *"deploy alalım"*
-- *"projeyi canlıya alma sürecini başlat"*
-- *"production'a çıkış için checklist oluştur"*
-- *"go-live kontrolü yap"*
+Once installed, triggering phrases will automatically engage the skill in conversation:
+- *"let's deploy this project"*
+- *"start the go-live process"*
+- *"prepare a production release checklist"*
+- *"run pre-deployment audit"*
 
 ---
 
-## 📂 Proje Yapısı
+## 📂 Repository Structure
 
 ```
 golive-skill/
-├── SKILL.md                       # Antigravity orkestrasyon ve yönlendirme dosyası
-├── README.md                      # Proje ana tanıtım ve dokümantasyon belgesi
-├── LICENSE                        # MIT Açık Kaynak Lisansı
+├── SKILL.md                       # Antigravity orchestration and routing entrypoint
+├── README.md                      # Comprehensive project documentation
+├── LICENSE                        # MIT Open Source License
 ├── assets/
-│   └── GOLIVE.template.md         # Projenin durumunu (state) tutan takip şablonu
+│   └── GOLIVE.template.md         # State tracking template
 ├── scripts/
-│   └── audit.py                   # Otomatik repo ön-tarama ve denetim aracı
-├── core/                          # Çekirdek Aşamalar (Tüm sahalarda ortak)
+│   └── audit.py                   # Automated repository pre-audit CLI
+├── core/                          # Universal Core Stages
 │   ├── 01-backend-hardening.md
 │   ├── 02-quality-and-eval.md
 │   ├── 03-frontend-readiness.md
@@ -178,7 +178,7 @@ golive-skill/
 │   ├── 06-security-and-secrets.md
 │   ├── 07-observability.md
 │   └── 08-release-and-rollback.md
-└── fields/                        # Saha Dalları (Ortama özel gereksinimler)
+└── fields/                        # Deployment Field Extensions
     ├── cloud-saas.md
     ├── customer-onprem.md
     └── edge-device.md
@@ -186,6 +186,6 @@ golive-skill/
 
 ---
 
-## 📄 Lisans
+## 📄 License
 
-Bu proje [MIT Lisansı](LICENSE) altında sunulmaktadır.
+This project is licensed under the [MIT License](LICENSE).

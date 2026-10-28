@@ -1,60 +1,60 @@
-# Aşama 02: Kalite ve Değerlendirme (Quality & Eval)
+# Stage 02: Quality & Evaluation (Quality & Eval)
 
-> **Amaç**: Sistemin iş mantığı doğruluğunu, regresyon dayanıklılığını ve performans limitlerini prodüksiyon yükü altına girmeden önce kanıtlamak. Geleneksel yazılım testleri ile AI/LLM model davranışsal değerlendirmelerini (eval) birleştirmek.
-
----
-
-## 1. Yapılacak Maddeler (Action Items)
-
-### A. Birim ve Entegrasyon Testleri (Unit & Integration Testing)
-- [ ] **Birim Testleri**: Servisin temel algoritmaları, yardımcı fonksiyonları ve veri dönüşümleri bağımsız mock'lar ile test edilmiş ve tüm testler başarılı (0 failed) olmalıdır.
-- [ ] **Entegrasyon Testleri**: Veritabanı işlemleri, kuyruk mekanizmaları ve API controller uçları gerçek veya ephemeral test konteynerleri (örn. Testcontainers) ile test edilmelidir.
-- [ ] **Test Kapsama Oranı (Code Coverage)**: İş mantığı (domain logic) için minimum %80 kapsama oranı hedeflenmeli; kritik ödeme, yetkilendirme ve veri silme akışlarında %100 kapsama sağlanmalıdır.
-
-### B. Uçtan Uca (E2E) ve Duman Testleri (Smoke Testing)
-- [ ] **Kritik Kullanıcı Yolculukları**: Kayıt olma, giriş yapma, ana fonksiyonu icra etme, veri kaydetme ve ödeme/tamamlama akışları otomatik E2E testleri (Playwright, Cypress veya API suite) ile doğrulanmalıdır.
-- [ ] **Karanlık Senaryolar (Negative Testing)**: Geçersiz payload'lar, süresi dolmuş token'lar, büyük dosyalar ve yetkisiz kaynak erişim denemelerinin doğru HTTP 4xx kodlarıyla reddedildiği test edilmelidir.
-
-### C. AI / LLM Değerlendirme Seti (Eval Dataset & Regression Suite)
-- [ ] **Altın Veri Seti (Golden Dataset)**: Sistemin karşılaşacağı temsil edici en az 50-100 girdi-çıktı senaryosunu içeren sürüm kontrollü bir eval seti oluşturulmalıdır.
-- [ ] **Regresyon ve Kalite Metrikleri**:
-  - LLM çıktısının yapısal doğruluğu (JSON şemasına uyum oranı = %100).
-  - Semantik benzerlik veya kural bazlı başarı skoru (Accuracy / Precision / Recall >= belirlenen eşik, örn. %90).
-  - Güvenlik ve zararlı içerik (Harm / Hallucination / Prompt Injection) taraması.
-- [ ] **Eval Karşılaştırması**: Yeni model sürümü veya güncellenen prompt şablonu, önceki temel (baseline) skordan daha düşük puan almamalıdır.
-
-### D. Performans, Gecikme ve Yük Benchmark'ı (Latency & Load Testing)
-- [ ] **Gecikme Hedefleri (Latency Budgets)**:
-  - Backend API p95 yanıt süresi < 250ms (LLM streaming hariç).
-  - LLM Time-To-First-Token (TTFT) < 1200ms, toplam yanıt süresi p95 < 6s.
-- [ ] **Yük Dayanıklılığı (Load & Stress Test)**: Hedeflenen eşzamanlı kullanıcı sayısının en az 1.5 katı yük (k6, Locust veya Hey kullanılarak) altında sistemin bellek tüketimi, CPU doygunluğu ve hata oranı ölçülmelidir.
+> **Objective**: Prove business logic correctness, regression resilience, and performance boundaries before exposing the system to production traffic. Bridge conventional automated software testing with behavioral evaluation (evals) for AI and LLM components.
 
 ---
 
-## 2. Çıkış Kriteri (Exit Gate)
+## 1. Action Items
 
-Aşağıdaki koşulların **tamamı** sağlanmadan Aşama 03'e geçilemez:
-1. `GOLIVE.md` dosyasında Aşama 02 maddelerinin tamamı işaretlenmiş olmalı.
-2. Tüm birim ve entegrasyon testlerinin geçtiğini gösteren CI/yerel test raporu mevcut olmalı.
-3. AI Eval test setinde doğruluk oranı belirlenen eşik değerin üzerinde olmalı ve sıfır şema hatası (`0 schema violations`) üretilmeli.
-4. Yük testi altında 5xx hata oranı <%0.1 ve p95 gecikme değeri tanımlanan bütçenin altında kalmalıdır.
+### A. Unit & Integration Testing
+- [ ] **Unit Tests**: Core algorithms, utility functions, and data transformations must be tested in isolation using lightweight mocks with zero test failures.
+- [ ] **Integration Tests**: Database queries, messaging queues, and API controllers must be validated against real or ephemeral test containers (e.g., Testcontainers) rather than in-memory SQLite mocks.
+- [ ] **Code Coverage**: Target at least 80% coverage on core domain logic, with 100% coverage on critical authentication, payment, and data destruction pathways.
+
+### B. End-to-End (E2E) & Smoke Testing
+- [ ] **Critical User Flows**: Automate end-to-end tests (via Playwright, Cypress, or comprehensive API suites) for registration, login, primary feature execution, and billing workflows.
+- [ ] **Negative Scenarios**: Test invalid payloads, expired tokens, oversized files, and unauthorized access attempts to ensure the system consistently responds with appropriate HTTP 4xx status codes.
+
+### C. AI / LLM Golden Evaluation Suite
+- [ ] **Golden Dataset**: Maintain a version-controlled evaluation dataset containing at least 50-100 representative input-output pairs capturing standard usage and edge cases.
+- [ ] **Regression & Quality Metrics**:
+  - Structural Integrity: 100% compliance with expected JSON output schemas.
+  - Semantic Accuracy: Measure accuracy, precision, and recall against predefined quality thresholds (e.g., >= 90%).
+  - Safety & Toxicity: Automated checks for hallucination, prompt injection vulnerability, and harmful outputs.
+- [ ] **Baseline Comparison**: Updated prompt templates or newer model versions must not score below established performance baselines.
+
+### D. Performance, Latency & Load Benchmarking
+- [ ] **Latency Budgets**:
+  - Backend API p95 response time < 250ms (excluding non-streaming LLM calls).
+  - LLM Time-To-First-Token (TTFT) < 1200ms; total response duration p95 < 6s.
+- [ ] **Load & Stress Testing**: Benchmark the system using tools like k6, Locust, or Hey at 1.5x expected peak concurrent load, monitoring memory stability, CPU saturation, and error rates.
 
 ---
 
-## 3. Her Maddenin Nedeni (Rationale)
+## 2. Exit Gate (Gate 02)
 
-| Madde | Neden Zorunlu? |
+Stage 03 cannot commence until **all** of the following criteria are satisfied:
+1. All Stage 02 checklist items are completed in `GOLIVE.md`.
+2. Clean CI or local test reports verifying 100% passing unit and integration test suites.
+3. The AI Golden Dataset evaluation passes with zero schema violations and scores above established accuracy thresholds.
+4. Stress testing confirms a 5xx error rate < 0.1% and p95 latency remains within SLA limits under 1.5x peak load.
+
+---
+
+## 3. Rationale
+
+| Action Item | Why It Is Mandatory |
 |:---|:---|
-| Testcontainers ile Entegrasyon | SQLite üzerinde yeşil yanan testler, PostgreSQL'in dialect, constraint veya transaction izolasyonu farkları yüzünden prodüksiyonda patlayabilir. |
-| Altın Eval Seti (Golden Dataset) | Prompt'ta yapılan ufacık bir ifade değişikliği, görünüşte iyi çalışsa da kenar vakalarda (edge cases) %30'a varan doğruluk kaybına yol açabilir. |
-| Negatif Senaryo Testi | Sadece beklenen akışı test etmek (happy path bias), ilk kötü niyetli veya hatalı kullanıcı girdisinde uygulamanın unhandled exception ile çökmesine sebep olur. |
-| Yük & Gecikme Testi | Sistem ilk canlıya çıktığında eşzamanlı 20 kullanıcı geldiğinde veritabanı bağlantı havuzunun dolduğunu görmek yerine bu darboğazı önceden tespit etmek gerekir. |
+| Containerized Integration Testing | Tests that pass on SQLite often fail in production against PostgreSQL due to dialect variations, locking mechanisms, or transaction isolation semantics. |
+| Golden Evaluation Dataset | Subtle prompt phrasing changes can introduce a 30% drop in accuracy on domain edge cases without being apparent in casual manual checks. |
+| Negative Path Testing | Testing only the happy path leaves systems vulnerable to unhandled exceptions when encountering unexpected or malicious inputs. |
+| Load & Latency Benchmarks | Discovering database connection pool limits when 20 concurrent users arrive in production results in immediate downtime. |
 
 ---
 
-## 4. Sık Yapılan Hatalar (Common Pitfalls)
+## 4. Common Pitfalls
 
-- ❌ **Yalnızca "Happy Path" Test Etmek**: Sadece doğru girdilerle test yapıp ağ kesintilerini, 429 yanıtlarını veya boş listeleri test etmemek.
-- ❌ **Testleri Harici Servislere Bağımlı Bırakmak**: Birim testlerinde gerçek OpenAI veya Stripe API'sini çağırmak (maliyet çıkarır, testleri aşırı yavaşlatır ve ağ kopunca CI'ı bozar).
-- ❌ **Eval Setini Güncellememek**: Prodüksiyonda kullanıcıların yaşadığı hatalı cevapları altın eval setine eklememek (Feedback Loop eksikliği).
-- ❌ **Gecikmede Sadece Ortalama (Average) Değere Bakmak**: Ortalama 200ms görünürken p99 kullanıcılarının 8 saniye beklediğini fark edememek.
+- ❌ **Testing Only Happy Paths**: Verifying valid inputs while neglecting network partitions, empty responses, or 429 rate limits.
+- ❌ **Calling Live Paid APIs in Unit Tests**: Pointing unit tests to production OpenAI or Stripe endpoints causes billing spikes, flakiness, and CI delays.
+- ❌ **Failing to Update the Eval Suite**: Not incorporating real-world production edge cases back into the regression dataset (broken feedback loop).
+- ❌ **Relying Exclusively on Average Latency**: Assuming a 200ms average response time is acceptable while the p99 percentile forces users to wait over 8 seconds.

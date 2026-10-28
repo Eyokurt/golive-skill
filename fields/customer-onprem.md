@@ -1,58 +1,58 @@
-# Saha Eklentisi: Müşteri Ortamı (Customer On-Premises & Enterprise)
+# Field Extension: Customer On-Premises (Enterprise & Air-Gapped)
 
-> **Amaç**: Müşterinin kendi veri merkezinde, özel sanal bulutunda (VPC) veya tamamen internete kapalı (air-gapped) ortamlarında çalışacak yazılımların kurulum, ağ, lisanslama, uyumluluk (KVKK) ve destek gereksinimlerini eksiksiz karşılamak.
-
----
-
-## 1. Yapılacak Maddeler (Action Items)
-
-### A. Kurulum Paketi ve Taşınabilirlik (Distribution Bundle)
-- [ ] **Kendi Kendine Yeterli Paket**: Docker Compose, Helm Chart veya tek dosyalık binary dağıtım paketi oluşturulmalıdır.
-- [ ] **İnternetsiz (Air-Gapped) Kurulum**: Dış internet erişimi olmayan ortamlarda tüm konteyner imajları ve bağımlılıklar tek bir tarball arşivinde (`docker save` / helm offline package) sunulabilmeli ve yerel registry'ye aktarılabilmelidir.
-- [ ] **Sistem Gereksinimleri Script'i (Pre-flight Check)**: Müşteri sunucusunda CPU, RAM, disk alanı, Docker/K8s sürümü ve OS çekirdek parametrelerini denetleyen tek komutluk bir `precheck.sh` betiği bulunmalıdır.
-
-### B. Kurumsal Ağ ve Güvenlik Kısıtları (Enterprise Networking)
-- [ ] **Özel Proxy ve CA Desteği**: Müşterinin kurumsal HTTP/HTTPS proxy'si (`HTTP_PROXY`, `NO_PROXY`) ve kurum içi özel sertifika yetkilisi (Custom Internal CA / Root Certificate) uygulama tarafından tanınmalı ve konfigüre edilebilmelidir.
-- [ ] **Kısıtlı Port Kullanımı**: Sistem sadece belgelenmiş minimum portları (örn. yalnızca 443 ve 80) dinlemeli; dışa rastgele yüksek portlar açmamalıdır.
-
-### C. Lisanslama ve Donanım Bağlama (Licensing & Node Locking)
-- [ ] **Çevrimdışı Lisans Doğrulaması**: Müşterinin internete çıkmadan doğrulayabileceği, kriptografik olarak imzalanmış (asymmetric RSA/ECDSA) lisans anahtarı veya süreli dosya mekanizması çalışmalıdır.
-- [ ] **Kapasite ve Süre Kısıtları**: Lisansın kullanıcı sayısı, CPU çekirdeği veya son kullanma tarihi kısıtları sisteme entegre edilmeli ve süresi dolmadan önce arayüzde uyarı verilmelidir.
-
-### D. Uzaktan Destek ve Tanılama (Diagnostics & Support)
-- [ ] **Destek Paketi Üretici (Support Bundle)**: Müşterinin tek bir komutla (`./support-dump.sh`) sistem loglarını, konfigürasyon özetini (şifreler otomatik maskelenmiş olarak) ve metrikleri tek bir zip arşivi halinde toplamasını sağlayan araç sağlanmalıdır.
-- [ ] **Audit Trail (Denetim İzi)**: Sistemdeki tüm yönetici aksiyonları (kullanıcı ekleme, yetki değişimi, veri dışa aktarma) silinemez yerel denetim günlüğüne (audit log) yazılmalıdır.
-
-### E. KVKK, GDPR ve Veri İzolasyonu
-- [ ] **Sıfır Dış Veri Sızıntısı**: Telemetri, analitik, harici font veya harici CDN çağrıları müşteri ortamında kesinlikle engellenmeli veya yerelleştirilmelidir (No external calls).
-- [ ] **Veri İzolasyonu ve Şifreleme**: Müşteri veritabanı dosyaları ve yedekleri at-rest (disk üzerinde) şifrelenebilmeli; veri silme talepleri için script hazır olmalıdır.
+> **Objective**: Address installation packaging, enterprise networking, offline air-gapped readiness, cryptographic licensing, diagnostic support, and strict data privacy (GDPR / KVKK) requirements when deploying software into customer-managed data centers or isolated virtual private clouds.
 
 ---
 
-## 2. Çıkış Kriteri (Field Gate: Customer On-Premises)
+## 1. Action Items
 
-Aşağıdaki koşulların **tamamı** sağlanmadan Müşteri Ortamına paket teslim edilemez:
-1. `GOLIVE.md` dosyasındaki Müşteri Ortamı maddeleri eksiksiz işaretlenmiş olmalı.
-2. Tamamen internet bağlantısı kesilmiş sanal bir makinede (Air-gapped VM) kurulum paketi başarıyla kurulup ayağa kalkmış olmalı.
-3. Pre-flight kontrol script'i yetersiz kaynaklı bir ortamda doğru uyarıları vererek kurulumu güvenle durdurmalı.
-4. Ağ dinlemesinde (Wireshark/tcpdump) dış dünyaya herhangi bir izinsiz telemetri veya DNS isteği atılmadığı kanıtlanmalıdır.
+### A. Distribution Packaging & Portability
+- [ ] **Self-Contained Installer**: Provide an automated installer packaged as a Helm chart, Docker Compose bundle, or single standalone binary.
+- [ ] **Air-Gapped Installation**: Support completely offline environments where outbound internet access is blocked. Bundle all container images and dependencies into a single offline tarball (`docker save` / offline Helm archive) loadable into local registries.
+- [ ] **Pre-Flight Validation Script**: Ship a standalone `precheck.sh` script to validate host CPU, RAM, disk space, kernel parameters, and container engine versions prior to installation.
+
+### B. Enterprise Networking & Proxy Constraints
+- [ ] **Corporate Proxy & Custom CA Support**: Support enterprise outbound HTTP/HTTPS proxies (`HTTP_PROXY`, `HTTPS_PROXY`, `NO_PROXY`) and permit the injection of internal enterprise Root CA certificates.
+- [ ] **Strict Port Minimization**: Expose only documented, necessary service ports (e.g., standard 443 and 80); eliminate random high-port bindings.
+
+### C. Offline Cryptographic Licensing
+- [ ] **Air-Gapped License Validation**: Validate cryptographically signed (asymmetric RSA/ECDSA) license files offline without requiring outbound connectivity to a remote validation server.
+- [ ] **Enforced Capacity Limits**: Gracefully enforce limits on user counts, CPU core counts, or expiration dates; display advance warnings prior to license expiration.
+
+### D. Diagnostics & Support Tooling
+- [ ] **Support Bundle Generator**: Provide a single command (`./support-dump.sh`) that collects system logs, environment diagnostics, and configuration summaries with all passwords and secrets automatically sanitized and redacted.
+- [ ] **Immutable Audit Logging**: Record administrative actions (user provisioning, role modifications, data export requests) into a tamper-evident local audit log.
+
+### E. Data Privacy & Zero External Telemetry (GDPR / KVKK)
+- [ ] **Zero Unsanctioned Outbound Traffic**: Strictly disable all external analytics, telemetry pings, remote font downloads, and external CDN dependencies in customer environments.
+- [ ] **At-Rest Encryption**: Support encryption-at-rest for customer databases and backups, providing scripts for compliance-driven data retention and destruction.
 
 ---
 
-## 3. Her Maddenin Nedeni (Rationale)
+## 2. Exit Gate (Field Gate: Customer On-Premises)
 
-| Madde | Neden Zorunlu? |
+An enterprise customer release package cannot be delivered until **all** of the following criteria are satisfied:
+1. All Customer On-Premises checklist items are completed in `GOLIVE.md`.
+2. Installation successfully executed in a completely air-gapped virtual machine with zero outbound internet connectivity.
+3. The pre-flight script verified to block installation cleanly on hosts with insufficient hardware resources.
+4. Network traffic inspection (via tcpdump or Wireshark) confirms zero unexpected outbound telemetry, DNS queries, or external asset calls.
+
+---
+
+## 3. Rationale
+
+| Action Item | Why It Is Mandatory |
 |:---|:---|
-| Air-Gapped Kurulum | Banka, savunma ve sağlık müşterilerinin sunucuları internete tamamen kapalıdır. Kurulum sırasında `npm install` veya Docker Hub'a gitmeye çalışan yazılım o ortamda asla çalışmaz. |
-| Kurumsal Proxy & CA | Kurum içi ağlarda SSL termination yapan kurumsal proxy'ler bulunur. Özel Root CA tanıtılamazsa tüm TLS istekleri `CERTIFICATE_VERIFY_FAILED` hatası verir. |
-| Destek Paketi (Diagnostics) | Müşteri ortamına SSH erişimi olamayacağı için, kriz anında müşteriden hızlıca temizlenmiş log paketi alabilmek sorunu çözmenin tek yoludur. |
-| Sıfır Dış Arama (KVKK) | Müşterinin hassas ortamından Google Analytics'e veya yabancı bir CDN'e giden tek bir istek bile KVKK/GDPR ihlali ve ağır yasal cezalar doğurur. |
+| Air-Gapped Packaging | Financial, defense, and healthcare institutions operate strictly isolated networks. Installers that attempt runtime `npm install` or image pulls fail immediately. |
+| Corporate Proxy & Custom CA | Enterprise corporate proxies perform SSL inspection. If the application cannot accept custom internal Root CAs, all TLS calls throw `CERTIFICATE_VERIFY_FAILED`. |
+| Sanitized Support Dumps | Remote SSH access into customer environments is typically forbidden. Sanitized diagnostic bundles provide the only viable mechanism for troubleshooting production issues. |
+| Zero External Telemetry | Inadvertent calls to external analytics or foreign CDNs from enterprise environments constitute severe compliance violations under GDPR, HIPAA, and KVKK. |
 
 ---
 
-## 4. Sık Yapılan Hatalar (Common Pitfalls)
+## 4. Common Pitfalls
 
-- ❌ **Gizli İnternet Bağımlılığı**: Arayüzde CDN'den font (`fonts.googleapis.com`) veya ikon kütüphanesi çekip air-gapped ortamda ekranın kırılması.
-- ❌ **Destek Paketine Secret Yazdırmak**: Müşterinin ürettiği log dump dosyasına veritabanı şifrelerini maskelemeden koyup firmanıza göndertmek.
-- ❌ **Sabit Hostname / IP Varsayımı**: Kod içinde `localhost` veya sabit IP adresleri hardcode edip müşterinin özel domain/ağ yapısında çalışmamak.
-- ❌ **Pre-flight Kontrolü Yapmamak**: Yetersiz RAM'e sahip sunucuda kuruluma başlayıp kurulumun ortasında sessizce disk bozulmasına yol açmak.
+- ❌ **Hidden CDN Dependencies**: Loading fonts (`fonts.googleapis.com`) or icons from public CDNs, causing user interfaces to break inside air-gapped environments.
+- ❌ **Dumping Cleartext Passwords in Support Bundles**: Including raw environment files or database credentials in diagnostic logs sent back to vendor support teams.
+- ❌ **Hardcoding Hostnames or IPs**: Embedding `localhost` or fixed IP assumptions into code rather than supporting configurable customer hostnames and domains.
+- ❌ **Skipping Pre-Flight Checks**: Attempting installation on underspecified customer hosts, resulting in corrupted databases mid-setup.
