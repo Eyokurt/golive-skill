@@ -1,7 +1,7 @@
 # Go-Live Skill (`golive-skill`)
 
 [![Antigravity Skill](https://img.shields.io/badge/Antigravity-Skill-blue.svg)](https://github.com/Eyokurt/golive-skill)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-brightgreen.svg)](https://www.python.org/)
+[![Zero Dependencies](https://img.shields.io/badge/Dependencies-Zero-brightgreen.svg)](#-zero-dependency-semantic-pre-audit)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Architecture: Multi-Field](https://img.shields.io/badge/Architecture-Multi--Field-purple.svg)](#-field-branches)
 
@@ -34,7 +34,7 @@ flowchart TD
     InitState --> DetectFields["Identify Target Fields<br/>(Cloud, On-Prem, Edge)"]
     ReadState --> DetectFields
     
-    DetectFields --> Audit["Run scripts/audit.py<br/>(Auto-check Completed Items)"]
+    DetectFields --> Audit["Semantic Codebase Inspection<br/>(Inspect stack, assets, gates)"]
     
     Audit --> Core01["01: Backend Hardening"]
     Core01 --> Gate01{"Gate 01 Passed?"}
@@ -121,23 +121,14 @@ Custom architectural requirements applied based on target operational environmen
 
 ---
 
-## 🔍 Pre-Audit Script: `scripts/audit.py`
+## 🔍 Zero-Dependency Semantic Pre-Audit
 
-A dependency-free Python CLI tool to inspect the repository, detect operational environments, and auto-sync findings into `GOLIVE.md`:
+Instead of relying on fragile regex scripts or external runtimes, the AI coding agent directly inspects the codebase using its native semantic tools:
 
-```powershell
-# Audit current repository and display report in terminal
-python scripts/audit.py --path .
-
-# Output audit findings as structured JSON
-python scripts/audit.py --path . --json
-
-# Initialize GOLIVE.md from template and auto-check detected items
-python scripts/audit.py --path . --init
-
-# Sync latest repository findings into an existing GOLIVE.md
-python scripts/audit.py --path . --sync
-```
+1. **Stack & Tooling Discovery**: Identifies runtime, dependencies, package managers, and frameworks (`package.json`, `pyproject.toml`, `go.mod`, `Cargo.toml`).
+2. **Production Asset Verification**: Confirms presence and quality of `Dockerfile`, `.dockerignore`, `.github/workflows`, test suites, and health check routes.
+3. **Secret Hygiene**: Scans source files and git configurations to ensure `.env` is ignored and zero credentials exist in repository files.
+4. **Automated State Tracking**: Automatically pre-checks satisfied items in `GOLIVE.md` before proceeding with sequential gate verification.
 
 ---
 
@@ -167,8 +158,6 @@ golive-skill/
 ├── LICENSE                        # MIT Open Source License
 ├── assets/
 │   └── GOLIVE.template.md         # State tracking template
-├── scripts/
-│   └── audit.py                   # Automated repository pre-audit CLI
 ├── core/                          # Universal Core Stages
 │   ├── 01-backend-hardening.md
 │   ├── 02-quality-and-eval.md

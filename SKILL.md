@@ -34,7 +34,7 @@ Agents executing this skill must **never violate** the following three rules:
 2. Identify Target Fields (Cloud/SaaS, Customer On-Prem, Edge/Device)
    │
    ▼
-3. Run Pre-Audit (execute scripts/audit.py and mark pre-existing items)
+3. Semantic Codebase Inspection (agent inspects repo and pre-fills GOLIVE.md)
    │
    ▼
 4. Sequentially Execute Core Stages (core/01 -> core/08)
@@ -66,12 +66,12 @@ Confirm the target operational environment(s) (can be multiple):
 - 🏢 **Customer On-Premises**: Enterprise data centers, customer VPCs, air-gapped offline networks.
 - 🤖 **Edge / Device**: NVIDIA Jetson, Raspberry Pi, ARM64 industrial IPCs, robotics, IoT devices.
 
-### Step 3: Automated Repository Pre-Audit
-Scan the codebase for existing production assets rather than searching manually:
-```powershell
-python <path_to_skill>/scripts/audit.py --path . --sync
-```
-This script audits Dockerfiles, test suites, CI pipelines, secret exposures, and health endpoints, automatically checking off detected items in `GOLIVE.md`.
+### Step 3: Semantic Codebase Pre-Audit
+Using native search and inspection tools (`grep_search`, `find_by_name`, `read_file`):
+1. Detect stack indicators (`package.json`, `pyproject.toml`, `go.mod`, `Cargo.toml`).
+2. Verify existing production assets (e.g., `Dockerfile`, `.github/workflows`, test suites, health endpoints `/healthz` or `/readyz`).
+3. Audit repository for accidental secrets (ensure `.env` is ignored and zero credentials exist in source).
+4. Pre-check items already satisfied in the repository and update `GOLIVE.md` accordingly before starting sequential phase execution.
 
 ---
 
