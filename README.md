@@ -4,12 +4,12 @@
   <img src="assets/og-image.png" alt="Go-Live Skill Open Graph Banner" width="100%">
 </p>
 
-[![Antigravity Skill](https://img.shields.io/badge/Antigravity-Skill-blue.svg)](https://github.com/Eyokurt/golive-skill)
+[![Agent Skill](https://img.shields.io/badge/Agent-Skill-blue.svg)](https://github.com/Eyokurt/golive-skill)
 [![Zero Dependencies](https://img.shields.io/badge/Dependencies-Zero-brightgreen.svg)](#-zero-dependency-semantic-pre-audit)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Architecture: Multi-Field](https://img.shields.io/badge/Architecture-Multi--Field-purple.svg)](#-field-branches)
 
-**`golive-skill`** is an autonomous, gate-driven production release and go-live orchestrator designed for AI coding agents (Google Antigravity, Claude, Cursor) and modern software engineering teams.
+**`golive-skill`** is an autonomous, gate-driven production release and go-live orchestrator designed for AI coding agents (Claude, Cursor, Copilot, Codex, Gemini, etc.) and modern software engineering teams.
 
 Starting from backend hardening, it systematically guides and verifies quality evaluation, frontend optimization, packaging, CI/CD, security, observability, and release/rollback procedures using strict **blocking exit gates**. It persists operational state within a repository-level `GOLIVE.md` file, guaranteeing that no phase is bypassed until its exit criteria are verified.
 
@@ -136,16 +136,16 @@ Instead of relying on fragile regex scripts or external runtimes, the AI coding 
 
 ---
 
-## 📦 Installing into Google Antigravity
+## 📦 Installation & Agent Setup
 
-Install this skill into your Antigravity user skills directory:
+Install this skill into your preferred AI coding agent or workspace skills directory:
 
-```powershell
-# Copy skill into Antigravity global configuration directory
-Copy-Item -Path ".\golive-skill" -Destination "$env:USERPROFILE\.gemini\config\skills\golive-skill" -Recurse -Force
+```bash
+# Clone directly into your project's or agent's skills directory
+git clone https://github.com/Eyokurt/golive-skill.git .skills/golive-skill
 ```
 
-Once installed, triggering phrases will automatically engage the skill in conversation:
+Once installed, triggering phrases will automatically engage the skill in conversation across any supported agent:
 - *"let's deploy this project"*
 - *"start the go-live process"*
 - *"prepare a production release checklist"*
@@ -157,11 +157,12 @@ Once installed, triggering phrases will automatically engage the skill in conver
 
 ```
 golive-skill/
-├── SKILL.md                       # Antigravity orchestration and routing entrypoint
+├── SKILL.md                       # Orchestration and routing entrypoint
 ├── README.md                      # Comprehensive project documentation
 ├── LICENSE                        # MIT Open Source License
 ├── assets/
-│   └── GOLIVE.template.md         # State tracking template
+│   ├── GOLIVE.template.md         # State tracking template
+│   └── og-image.png               # Minimalist Open Graph banner
 ├── core/                          # Universal Core Stages
 │   ├── 01-backend-hardening.md
 │   ├── 02-quality-and-eval.md
