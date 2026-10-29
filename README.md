@@ -1,5 +1,9 @@
 # Go-Live Skill (`golive-skill`)
 
+<p align="center">
+  <img src="assets/og-image.png" alt="Go-Live Skill Open Graph Banner" width="100%">
+</p>
+
 [![Antigravity Skill](https://img.shields.io/badge/Antigravity-Skill-blue.svg)](https://github.com/Eyokurt/golive-skill)
 [![Zero Dependencies](https://img.shields.io/badge/Dependencies-Zero-brightgreen.svg)](#-zero-dependency-semantic-pre-audit)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
